@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import linesRoute from './routes/lines.route';
 import * as OpenApiValidator from 'express-openapi-validator';
 import { ValidationError } from 'express-openapi-validator/dist/framework/types';
+import departuresRoute from './routes/departures.route';
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.static("public"));
 
 // API Routes
 app.use('/lines', linesRoute);
+app.use('/departures', departuresRoute);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -27,12 +29,12 @@ app.get('/health', (req: Request, res: Response) => {
     });
 });
 
-app.use((err: ValidationError, req: Request, res: Response, next: NextFunction) => {
-    // format error
-    res.status(err.status || 500).json({
-        message: err.message,
-        errors: err.errors,
-    });
-});
+// app.use((err: ValidationError, req: Request, res: Response, next: NextFunction) => {
+//     // format error
+//     res.status(err.status || 500).json({
+//         message: err.message,
+//         errors: err.errors,
+//     });
+// });
 
 export default app;

@@ -11,6 +11,8 @@ info:
 tags:
   - name: lines
     description: Line static data (line code, stops...)
+  - name: departures
+    description: Departure times
 paths:
   /lines:
     get:
@@ -61,6 +63,36 @@ paths:
           description: Invalid direction for the provided line
         '404':
           description: Unknown line
+  /departures/scheduled:
+    get:
+      tags:
+        - departures
+      summary: Get scheduled departures
+      description: Get all scheduled departures for all lines for a given stop
+      operationId: getScheduledDepartures
+      parameters:
+        - name: from
+          in: query
+          description: Stop (e.g. `Baščaršija`)
+          required: true
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: Time from which departures should be included (e.g. `2025-01-01T07:00:00.000Z`). Returns all scheduled departures if not provided.
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Departure'
 components:
   schemas:
     Line:
@@ -83,3 +115,11 @@ components:
           type: string
           description: The name of the stop
           example: 'Baščaršija'
+    Departure:
+      type: object
+      properties:
+        scheduledAt:
+          type: string
+          description: The scheduled time of departure
+          pattern: '^\d{2}-\d{2}$'
+          example: '05:00'
