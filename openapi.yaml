@@ -1,0 +1,85 @@
+openapi: 3.0.4
+info:
+  title: Transit Planner
+  description: |-
+    A simple transit planner app based on fixed scheduled.
+
+    [View source on Github](https://github.com/corentindautreme/transit-planner)
+  contact:
+    email: to@do.com
+  version: 0.0.1
+tags:
+  - name: lines
+    description: Line static data (line code, stops...)
+paths:
+  /lines:
+    get:
+      tags:
+        - lines
+      summary: List all lines
+      description: List all lines
+      operationId: getAllLines
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Line'
+  /lines/describe:
+    get:
+      tags:
+        - lines
+      summary: Describe line route
+      description: Get the route followed by a line as a list of stops, given the line's `name`, and the `direction` of the line.
+      operationId: describeLineRoute
+      parameters:
+        - name: name
+          in: query
+          description: Line name (e.g. `3`)
+          required: true
+          schema:
+            type: string
+        - name: direction
+          in: query
+          description: Direction of the line
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Stop'
+        '400':
+          description: Invalid direction for the provided line
+        '404':
+          description: Unknown line
+components:
+  schemas:
+    Line:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the line
+          example: '3'
+        type:
+          type: string
+          description: The type of transport of that line
+          enum:
+            - tram
+            - trolleybus
+    Stop:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the stop
+          example: 'Baščaršija'
