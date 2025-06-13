@@ -9,8 +9,18 @@ export default class DeparturesController {
     }
 
     async getScheduledDepartures(req: Request, res: Response) {
-        const {from, after} = req.query as {from: string, after?: string};
-        const departures = await this.departuresService.getScheduledDepartures(from, after);
+        const {from, after, limit} = req.query as {from: string, after: string | undefined, limit: number | undefined};
+        const departures = await this.departuresService.getScheduledDepartures(from, after, limit);
+        if (departures) {
+            res.status(200).json(departures);
+        } else {
+            res.status(404).json({'error': `No departures found for stop ${from}`});
+        }
+    }
+
+    async getNextDepartures(req: Request, res: Response) {
+        const {from, limit} = req.query as {from: string, limit: number | undefined};
+        const departures = await this.departuresService.getNextDepartures(from, limit);
         if (departures) {
             res.status(200).json(departures);
         } else {

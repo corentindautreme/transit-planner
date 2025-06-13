@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model line {
+  id              Int               @id(map: "line_pk")
+  name            String?           @db.VarChar
+  type            String?           @db.VarChar
+  departure       departure[]
+  departure_delay departure_delay[]
+  line_stop       line_stop[]
+
+  @@unique([name, type])
+}
+
+model line_stop {
+  id        Int      @id(map: "line_stop_pk")
+  id_line   Int?
+  id_stop   Int?
+  direction String?  @db.VarChar
+  order     Int?
+  default   Boolean? @default(true)
+  line      line?    @relation(fields: [id_line], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_line")
+  stop      stop?    @relation(fields: [id_stop], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stop")
+
+  @@unique([id_line, id_stop, direction], map: "unique_stop_on_line")
+}
+
+model departure {
+  id        Int       @id(map: "departure_pk")
+  id_line   Int?
+  id_stop   Int?
+  direction String?   @db.VarChar
+  time_utc  DateTime? @db.Time(6)
+  line      line?     @relation(fields: [id_line], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_line")
+  stop      stop?     @relation(fields: [id_stop], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stop")
+}
+
+model stop {
+  id              Int               @id(map: "stop_pk")
+  name            String?           @db.VarChar
+  departure       departure[]
+  departure_delay departure_delay[]
+  line_stop       line_stop[]
+}
+
+model departure_delay {
+  id        Int     @id(map: "departure_delay_pk")
+  id_line   Int?
+  id_stop   Int?
+  direction String? @db.VarChar
+  delay     Int?
+  line      line?   @relation(fields: [id_line], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_line")
+  stop      stop?   @relation(fields: [id_stop], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stop")
+}

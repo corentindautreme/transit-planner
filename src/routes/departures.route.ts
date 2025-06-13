@@ -1,6 +1,4 @@
 import { Router } from 'express';
-import LinesController from '../controllers/lines.controller';
-import LinesService from '../services/lines.service';
 import DeparturesController from '../controllers/departures.controller';
 import DeparturesService from '../services/departures.service';
 
@@ -16,6 +14,7 @@ class DeparturesRoute {
 
     private initRoutes() {
         this.router.get('/scheduled', this.departuresController.getScheduledDepartures.bind(this.departuresController));
+        this.router.get('/next', this.departuresController.getNextDepartures.bind(this.departuresController));
     }
 }
 
