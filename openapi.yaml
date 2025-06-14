@@ -9,7 +9,7 @@ info:
     email: to@do.com
   version: 0.0.1
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:4000
 tags:
   - name: lines
     description: Line static data (line code, stops...)
@@ -32,12 +32,37 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Line'
-  /lines/describe:
+  /lines/describe-line:
+    get:
+      tags:
+        - lines
+      summary: Describe line
+      description: Get the details of a line as well as all of its routes, returned as a list of stops and their associated connections grouped by line and direction, given the line's `name`
+      operationId: describeLine
+      parameters:
+        - name: name
+          in: query
+          description: Line name (e.g. `3`)
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DescribedLine'
+        '400':
+          description: Invalid direction for the provided line
+        '404':
+          description: Stop is not on the provided line
+  /lines/describe-route:
     get:
       tags:
         - lines
       summary: Describe line route
-      description: Get the route followed by a line as a list of stops, given the line's `name`, and the `direction` of the line
+      description: Get the route followed by a line as a list of stops and their associated connections, given the line's `name`, and the `direction` of the line
       operationId: describeLineRoute
       parameters:
         - name: name
@@ -71,6 +96,22 @@ paths:
           description: Invalid direction for the provided line
         '404':
           description: Stop is not on the provided line
+  /lines/describe-all:
+    get:
+      tags:
+        - lines
+      summary: Describe the routes of each line
+      description: Get the details and routes, returned as a list of stops and their associated connections grouped by line and direction, followed by each line of the system
+      operationId: describeAllLines
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DescribedLine'
   /departures/scheduled:
     get:
       tags:
@@ -154,6 +195,14 @@ components:
           enum:
             - tram
             - trolleybus
+        directions:
+          type: array
+          items:
+            type: string
+          description: The directions that the line can take
+          example:
+            - Baščaršija
+            - Ilidža
     Stop:
       type: object
       description: A stop on the transport network
@@ -163,30 +212,76 @@ components:
           description: The name of the stop
           example: 'Baščaršija'
         connections:
-          $ref: '#/components/schemas/Connection'
+          type: array
+          items:
+            $ref: '#/components/schemas/Connection'
     Connection:
       type: object
-      description: Describes a connection at a stop
+      description: A connection at a stop
       properties:
         line:
           type: string
           description: The name of the connecting line
-          example: '3'
+          example: '102'
         type:
           type: string
           description: The type of transport of the connecting line
           enum:
             - tram
             - trolleybus
-        direction:
-          type: string
-          description: The direction of the connecting line
-          example: 'Trg Austrije'
+          example: trolleybus
+        directions:
+          type: array
+          items:
+            type: string
+          description: The directions of the connecting line that are reachable at this stop
+          example:
+            - Otoka
+            - Trg Austrije
     Departure:
       type: object
+      description: A departure at a stop
       properties:
         scheduledAt:
           type: string
           description: The scheduled time of departure
           pattern: '^\d{2}-\d{2}$'
           example: '05:00'
+    Route:
+      type: object
+      description: A followed taken by a line
+      properties:
+        direction:
+          type: string
+          description: The direction of the route
+          example: 'Baščaršija'
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stop'
+    DescribedLine:
+      type: object
+      description: A line on the transport network, including the routes it follows
+      properties:
+        name:
+          type: string
+          description: The name of the line
+          example: '3'
+        type:
+          type: string
+          description: The type of transport of that line
+          enum:
+            - tram
+            - trolleybus
+        directions:
+          type: array
+          items:
+            type: string
+          description: The directions that the line can take
+          example:
+            - Baščaršija
+            - Ilidža
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Route'

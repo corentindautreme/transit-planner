@@ -6,5 +6,5 @@ export interface Stop {
 export interface Connection {
     line: string;
     type: string;
-    direction: string;
+    directions: string[];
 }

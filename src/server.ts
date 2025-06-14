@@ -4,7 +4,7 @@ import http from 'http';
 
 config();
 
-const PORT: number = parseInt(process.env.PORT || '3000', 10);
+const PORT: number = parseInt(process.env.PORT || '4000', 10);
 const NODE_ENV: string = process.env.NODE_ENV || 'development';
 
 const server = new http.Server(app);
