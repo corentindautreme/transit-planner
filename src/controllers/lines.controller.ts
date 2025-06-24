@@ -1,5 +1,8 @@
 import LinesService from '../services/lines.service';
 import { Request, Response } from 'express';
+import { Stop } from '../models/stop';
+import { LineNotFoundError } from '../models/error/line-not-found';
+import { StopNotFound } from '../models/error/stop-not-found';
 
 export default class LinesController {
     private readonly linesService: LinesService;
@@ -13,12 +16,24 @@ export default class LinesController {
     }
 
     async describeLineRoute(req: Request, res: Response) {
-        const {name, direction} = req.query as {name: string, direction: string};
-        const route = await this.linesService.describeLineRoute(name, direction);
-        if (route) {
-            res.status(200).json(route);
-        } else {
-            res.status(404).json({'error': `No line found with name ${name}`});
-        }
+        const {name, direction, from} = req.query as {name: string, direction: string, from?: string};
+        this.linesService.describeLineRoute(name, direction, from)
+            .then((route: Stop[]) => res.status(200).json(route))
+            .catch((err: Error) => {
+                let errorMessage: string;
+                let status: number;
+                if (err instanceof LineNotFoundError) {
+                    status = 404;
+                    errorMessage = err.message;
+                } else if (err instanceof StopNotFound) {
+                    status = 400;
+                    errorMessage = err.message;
+                } else {
+                    console.error(err);
+                    status = 500;
+                    errorMessage = err.message;
+                }
+                res.status(status).json({error: errorMessage});
+            });
     }
 }

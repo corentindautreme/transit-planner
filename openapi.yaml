@@ -2,15 +2,19 @@ openapi: 3.0.4
 info:
   title: Transit Planner
   description: |-
-    A simple transit planner app based on fixed scheduled.
+    A simple transit planner app based on fixed scheduled
 
     [View source on Github](https://github.com/corentindautreme/transit-planner)
   contact:
     email: to@do.com
   version: 0.0.1
+servers:
+  - url: http://localhost:3000
 tags:
   - name: lines
     description: Line static data (line code, stops...)
+  - name: departures
+    description: Departure times
 paths:
   /lines:
     get:
@@ -33,7 +37,7 @@ paths:
       tags:
         - lines
       summary: Describe line route
-      description: Get the route followed by a line as a list of stops, given the line's `name`, and the `direction` of the line.
+      description: Get the route followed by a line as a list of stops, given the line's `name`, and the `direction` of the line
       operationId: describeLineRoute
       parameters:
         - name: name
@@ -48,6 +52,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: from
+          in: query
+          description: A stop of the line from which to start describing the line
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -60,11 +70,79 @@ paths:
         '400':
           description: Invalid direction for the provided line
         '404':
-          description: Unknown line
+          description: Stop is not on the provided line
+  /departures/scheduled:
+    get:
+      tags:
+        - departures
+      summary: Get scheduled departures
+      description: Get all scheduled departures for all lines for a given stop, grouped by line and direction
+      operationId: getScheduledDepartures
+      parameters:
+        - name: from
+          in: query
+          description: Stop (e.g. `Baščaršija`)
+          example: 'Baščaršija'
+          required: true
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: Time from which departures should be included (e.g. `2025-01-01T07:00:00.000Z`). Returns all scheduled departures (or the first X scheduled departures, where X is the value set in the `limit` parameter) for the day if not provided
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          description: Limit the number of departures to be returned for all directions. Returns all scheduled departures (or all departures scheduled after the time set in `after`) for the day if not provided
+          required: false
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Departure'
+  /departures/next:
+    get:
+      tags:
+        - departures
+      summary: Get next departures
+      description: Get the next immediate departures for all lines for a given stop, grouped by line and direction
+      operationId: getNextDepartures
+      parameters:
+        - name: from
+          in: query
+          description: Stop (e.g. `Baščaršija`)
+          example: 'Baščaršija'
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Limit the number of departures to be returned for all directions. Defaults to 5 if not provided.
+          required: false
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Departure'
 components:
   schemas:
     Line:
       type: object
+      description: A line on the transport network
       properties:
         name:
           type: string
@@ -78,8 +156,37 @@ components:
             - trolleybus
     Stop:
       type: object
+      description: A stop on the transport network
       properties:
         name:
           type: string
           description: The name of the stop
           example: 'Baščaršija'
+        connections:
+          $ref: '#/components/schemas/Connection'
+    Connection:
+      type: object
+      description: Describes a connection at a stop
+      properties:
+        line:
+          type: string
+          description: The name of the connecting line
+          example: '3'
+        type:
+          type: string
+          description: The type of transport of the connecting line
+          enum:
+            - tram
+            - trolleybus
+        direction:
+          type: string
+          description: The direction of the connecting line
+          example: 'Trg Austrije'
+    Departure:
+      type: object
+      properties:
+        scheduledAt:
+          type: string
+          description: The scheduled time of departure
+          pattern: '^\d{2}-\d{2}$'
+          example: '05:00'
