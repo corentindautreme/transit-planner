@@ -1,5 +1,6 @@
 import DataAccessService from './data.access.service';
-import { DepartureByLine } from '../models/departures';
+import { Departure, DepartureByLine } from '../models/departures';
+import { TransportType } from '../models/transport-type';
 
 export default class DeparturesService extends DataAccessService {
     constructor() {
@@ -10,7 +11,7 @@ export default class DeparturesService extends DataAccessService {
         const res = await this.prismaClient.line_stop.findMany({
             select: {
                 direction: true,
-                line: {select: {name: true}},
+                line: {select: {name: true, type: true}},
                 stop: {
                     select: {
                         name: true,
@@ -53,7 +54,7 @@ export default class DeparturesService extends DataAccessService {
                 ]
             }
         }) as ({
-            line: { name: string },
+            line: { name: string, type: TransportType },
             stop: {
                 name: string,
                 departure: { line: { name: string }, direction: string, time_utc: Date }[],
@@ -78,21 +79,29 @@ export default class DeparturesService extends DataAccessService {
             .filter(lineStop => lineStop.stop.departure.length > 0)
             .reduce((departuresByLine, lineStop) => {
                 if (!(lineStop.line.name in departuresByLine)) {
-                    departuresByLine[lineStop.line.name] = {};
+                    departuresByLine[lineStop.line.name] = {
+                        type: lineStop.line.type as TransportType,
+                        departures: {} as { [direction: string]: Date[] }
+                    };
                 }
                 lineStop.stop.departure
                     // only keep the departures for the line of the line_stop we're considering this iteration
                     // otherwise we end up inserting departures from Otoka for line 105 as departures for line 101
                     .filter(departure => departure.line.name === lineStop.line.name)
                     .forEach(departure => {
-                        if (!departuresByLine[lineStop.line.name][departure.direction]) {
-                            departuresByLine[lineStop.line.name][departure.direction] = [departure.time_utc];
+                        if (!departuresByLine[lineStop.line.name].departures[departure.direction]) {
+                            departuresByLine[lineStop.line.name].departures[departure.direction] = [departure.time_utc];
                         } else {
-                            departuresByLine[lineStop.line.name][departure.direction].push(departure.time_utc)
+                            departuresByLine[lineStop.line.name].departures[departure.direction].push(departure.time_utc)
                         }
                     });
                 return departuresByLine;
-            }, {} as { [line: string]: { [direction: string]: Date[] } });
+            }, {} as {
+                [line: string]: {
+                    type: TransportType;
+                    departures: { [direction: string]: Date[] };
+                }
+            });
 
         let getAfter;
         if (!after) {
@@ -108,22 +117,26 @@ export default class DeparturesService extends DataAccessService {
             .filter(d => Object.keys(departuresByLine).includes(d.line.name))
             .map(r => {
                 const delay: number = r.stop.departure_delay.filter(delay => delay.line.name == r.line.name && delay.direction == r.direction)[0]?.delay || 0;
-                const lineDepartures = Object.keys(departuresByLine).includes(r.line.name) ? departuresByLine[r.line.name] : {};
+                const lineDepartures = Object.keys(departuresByLine).includes(r.line.name) ? departuresByLine[r.line.name].departures : {};
                 const times = (Object.keys(lineDepartures).includes(r.direction) ? lineDepartures[r.direction] : [])
                     .map(d => new Date(d.getTime() + delay * 60_000))
                     .filter(d => d > getAfter);
                 const departures = !limit ? times : times.slice(0, limit);
                 return {
                     line: r.line.name,
+                    type: r.line.type,
                     direction: r.direction,
                     departures: departures
                 };
             })
             .reduce((out, departure) => {
                 if (!(departure.line in out)) {
-                    out[departure.line] = {};
+                    out[departure.line] = {
+                        type: departure.type,
+                        departures: {} as { [direction: string]: Departure[] }
+                    };
                 }
-                out[departure.line][departure.direction] = departure.departures.map(d => ({'scheduledAt': d.toLocaleString('bs-BA', {timeStyle: 'short'})}));
+                out[departure.line].departures[departure.direction] = departure.departures.map(d => ({'scheduledAt': d.toLocaleString('bs-BA', {timeStyle: 'short'})}));
                 return out;
             }, {} as DepartureByLine);
     }
