@@ -1,4 +1,4 @@
-import { Line } from '../models/line';
+import { DescribedLine, Line, Route } from '../models/line';
 import DataAccessService from './data.access.service';
 import { Connection, Stop } from '../models/stop';
 import { LineNotFoundError } from '../models/error/line-not-found';
@@ -13,10 +13,22 @@ export default class LinesService extends DataAccessService {
         const lines = await this.prismaClient.line.findMany({
             select: {
                 name: true,
-                type: true
+                type: true,
+                line_stop: {
+                    select: {stop: {select: {name: true}}},
+                    where: {
+                        order: 0
+                    }
+                }
             }
-        }) as Line[];
-        return lines;
+        }) as (Omit<Line, 'directions'> & {
+            line_stop: { stop: { name: string } }[]
+        })[];
+        return lines.map(line => ({
+            name: line.name,
+            type: line.type,
+            directions: line.line_stop.map(ls => ls.stop.name)
+        } as Line));
     }
 
     async describeLineRoute(name: string, direction: string, from?: string): Promise<Stop[]> {
@@ -49,13 +61,26 @@ export default class LinesService extends DataAccessService {
         }
         const route = lineStops.map(ls => ({
             name: ls.stop.name,
-            connections: ls.stop.line_stop
-                // don't list as a connection at that stop:
-                //  * the current line
-                //  * a line that ends at that stop
-                .filter(s => s.line.name != ls.line.name && s.direction != ls.stop.name)
-                .map(s => ({line: s.line.name, type: s.line.type, direction: s.direction} as Connection))
-                .sort((c1, c2) => c1.line.localeCompare(c2.line))
+            connections: Object
+                .entries(ls.stop.line_stop
+                    // don't list the current line as a connection at that stop
+                    .filter(s => s.line.name != ls.line.name)
+                    // map as a line => line_stop[] object
+                    .reduce((connectionsByLine, lineStop) => {
+                        if (!(lineStop.line.name in connectionsByLine)) {
+                            connectionsByLine[lineStop.line.name] = [];
+                        }
+                        connectionsByLine[lineStop.line.name].push(lineStop);
+                        return connectionsByLine;
+                    }, {} as { [line: string]: { line: { name: string, type: string }, direction: string }[] })
+                )
+                // map as a list of connections and sort them by type, then line name
+                .map(([lineName, lineStops]) => ({
+                    line: lineName,
+                    type: lineStops[0].line.type,
+                    directions: lineStops.map(ls => ls.direction)
+                } as Connection))
+                .sort((c1, c2) => c1.type != c2.type ? c1.type.localeCompare(c2.type) : c1.line.localeCompare(c2.line))
         } as Stop));
         if (!!from) {
             const indexOfFrom = route.findIndex((s: Stop) => s.name === from);
@@ -65,5 +90,85 @@ export default class LinesService extends DataAccessService {
             return Promise.reject(new StopNotFound(`Stop ${from} does not exist on line ${name}`));
         }
         return route;
+    }
+
+    async describeLine(name: string): Promise<DescribedLine> {
+        return this.describeLines([name]).then(lines => lines[0]);
+    }
+
+    // TODO have directions returned in the same order as in getAllLines
+    async describeLines(names?: string[]): Promise<DescribedLine[]> {
+        return this.prismaClient.line_stop.findMany({
+            select: {
+                line: {select: {name: true, type: true}},
+                direction: true,
+                stop: {
+                    select: {
+                        name: true,
+                        line_stop: {
+                            select: {
+                                line: {select: {name: true, type: true}},
+                                direction: true,
+                                order: true
+                            }
+                        }
+                    }
+                },
+            },
+            where: !!names ? {line: {name: {in: names}}} : undefined,
+            orderBy: {order: 'asc'}
+        }).then(lineStops => lineStops as ({
+            line: { name: string, type: string },
+            direction: string,
+            stop: (Stop & { line_stop: { order: number, line: { name: string, type: string }, direction: string }[] })
+        }[])).then(lineStops => lineStops.reduce((lineStopsByLineAndDirection, lineStop) => {
+            if (!Object.keys(lineStopsByLineAndDirection).includes(lineStop.line.name)) {
+                lineStopsByLineAndDirection[lineStop.line.name] = {type: lineStop.line.type, routes: {}};
+            }
+            if (!Object.keys(lineStopsByLineAndDirection[lineStop.line.name].routes).includes(lineStop.direction)) {
+                lineStopsByLineAndDirection[lineStop.line.name].routes[lineStop.direction] = [];
+            }
+            lineStopsByLineAndDirection[lineStop.line.name].routes[lineStop.direction].push({
+                name: lineStop.stop.name,
+                connections: Object
+                    .entries(lineStop.stop.line_stop
+                        // don't list the current line as a connection at that stop
+                        .filter(s => s.line.name != lineStop.line.name)
+                        // map as a line => line_stop[] object
+                        .reduce((connectionsByLine, lineStop) => {
+                            if (!(lineStop.line.name in connectionsByLine)) {
+                                connectionsByLine[lineStop.line.name] = [];
+                            }
+                            connectionsByLine[lineStop.line.name].push(lineStop);
+                            return connectionsByLine;
+                        }, {} as { [line: string]: { line: { name: string, type: string }, direction: string }[] })
+                    )
+                    // map as a list of connections and sort them by type, then line name
+                    .map(([lineName, lineStops]) => ({
+                        line: lineName,
+                        type: lineStops[0].line.type,
+                        directions: lineStops.map(ls => ls.direction)
+                    } as Connection))
+                    .sort((c1, c2) => c1.type != c2.type ? c1.type.localeCompare(c2.type) : c1.line.localeCompare(c2.line))
+            });
+            return lineStopsByLineAndDirection;
+        }, {} as {
+            [line: string]: {
+                type: string,
+                routes: {
+                    [direction: string]: Stop[]
+                }
+            }
+        })).then(lineStopsByLineAndDirection => {
+            return Object.entries(lineStopsByLineAndDirection).map(([name, line]) => ({
+                name: name,
+                type: line.type,
+                directions: Object.keys(line.routes),
+                routes: Object.entries(line.routes).map(([direction, stops]) => ({
+                    direction: direction,
+                    stops: stops
+                }) as Route)
+            }) as DescribedLine);
+        });
     }
 }
