@@ -146,9 +146,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Departure'
+                $ref: '#/components/schemas/DeparturesByLine'
   /departures/next:
     get:
       tags:
@@ -176,9 +174,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Departure'
+                $ref: '#/components/schemas/DeparturesByLine'
 components:
   schemas:
     Line:
@@ -247,9 +243,51 @@ components:
           description: The scheduled time of departure
           pattern: '^\d{2}-\d{2}$'
           example: '05:00'
+    DeparturesByLine:
+      type: object
+      description: Departures grouped by line and direction
+      additionalProperties:
+        type: object
+        properties:
+          type:
+            type: string
+            description: The type of transport of the line
+            enum:
+              - tram
+              - trolleybus
+          departures:
+            type: object
+            description: Departures for the line grouped by direction
+            additionalProperties:
+              type: array
+              items:
+                $ref: "#/components/schemas/Departure"
+      example:
+        3:
+          type: tram
+          departures:
+            Baščaršija:
+              - scheduledAt: "00:00"
+              - scheduledAt: "00:04"
+              - scheduledAt: "00:08"
+            Ilidža:
+              - scheduledAt: "00:00"
+              - scheduledAt: "00:04"
+              - scheduledAt: "00:08"
+        103:
+          type: trolleybus
+          departures:
+            Dobrinja:
+              - scheduledAt: "00:00"
+              - scheduledAt: "00:04"
+              - scheduledAt: "00:08"
+            Trg Austrije:
+              - scheduledAt: "00:00"
+              - scheduledAt: "00:04"
+              - scheduledAt: "00:08"
     Route:
       type: object
-      description: A followed taken by a line
+      description: A route taken by a line
       properties:
         direction:
           type: string
