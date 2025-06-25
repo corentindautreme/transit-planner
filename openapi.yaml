@@ -96,9 +96,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/Stop'
         '400':
-          description: Invalid direction for the provided line
+          description: The provided stop is not on the provided line, or not served in the provided direction
         '404':
-          description: Stop is not on the provided line
+          description: Could not find the provided line, or the provided line exists but doesn't go in the provided direction
   /lines/describe-all:
     get:
       tags:
