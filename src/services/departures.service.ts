@@ -7,7 +7,7 @@ export default class DeparturesService extends DataAccessService {
         super();
     }
 
-    async getScheduledDepartures(from: string, after?: string | Date, limit?: number): Promise<DepartureByLine> {
+    async getScheduledDepartures(from: string, line?: string, direction?: string, after?: string | Date, limit?: number): Promise<DepartureByLine> {
         const res = await this.prismaClient.line_stop.findMany({
             select: {
                 direction: true,
@@ -31,8 +31,10 @@ export default class DeparturesService extends DataAccessService {
                 },
             },
             // get the selected fields of the initial line_stop of a route (order = 0) or for the line_stop at "from"
-            // (the stop from which we're trying to get departures)
+            // (the stop from which we're trying to get departures), potentially for a given line/direction
             where: {
+                direction: direction,
+                line: { name: line },
                 OR: [
                     {
                         order: 0,
@@ -141,8 +143,8 @@ export default class DeparturesService extends DataAccessService {
             }, {} as DepartureByLine);
     }
 
-    async getNextDepartures(from: string, limit?: number): Promise<DepartureByLine> {
+    async getNextDepartures(from: string, line?: string, direction?: string, limit?: number): Promise<DepartureByLine> {
         const after = new Date();
-        return await this.getScheduledDepartures(from, after, limit || 5);
+        return await this.getScheduledDepartures(from, line, direction, after, limit || 5);
     }
 }

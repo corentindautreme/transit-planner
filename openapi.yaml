@@ -42,7 +42,8 @@ paths:
       parameters:
         - name: name
           in: query
-          description: Line name (e.g. `3`)
+          description: Line name
+          example: '3'
           required: true
           schema:
             type: string
@@ -67,13 +68,15 @@ paths:
       parameters:
         - name: name
           in: query
-          description: Line name (e.g. `3`)
+          description: Line name
+          example: '3'
           required: true
           schema:
             type: string
         - name: direction
           in: query
           description: Direction of the line
+          example: 'Baščaršija'
           required: true
           schema:
             type: string
@@ -122,14 +125,29 @@ paths:
       parameters:
         - name: from
           in: query
-          description: Stop (e.g. `Baščaršija`)
+          description: Stop
           example: 'Baščaršija'
           required: true
           schema:
             type: string
+        - name: line
+          in: query
+          description: Line name
+          example: '3'
+          required: false
+          schema:
+            type: string
+        - name: direction
+          in: query
+          description: Direction of the line
+          example: 'Ilidža'
+          required: false
+          schema:
+            type: string
         - name: after
           in: query
-          description: Time from which departures should be included (e.g. `2025-01-01T07:00:00.000Z`). Returns all scheduled departures (or the first X scheduled departures, where X is the value set in the `limit` parameter) for the day if not provided
+          description: Time from which departures should be included. Returns all scheduled departures (or the first X scheduled departures, where X is the value set in the `limit` parameter) for the day if not provided
+          example: '2025-01-01T07:00:00.000Z'
           required: false
           schema:
             type: string
@@ -137,6 +155,7 @@ paths:
         - name: limit
           in: query
           description: Limit the number of departures to be returned for all directions. Returns all scheduled departures (or all departures scheduled after the time set in `after`) for the day if not provided
+          example: 5
           required: false
           schema:
             type: number
@@ -157,14 +176,29 @@ paths:
       parameters:
         - name: from
           in: query
-          description: Stop (e.g. `Baščaršija`)
+          description: Stop
           example: 'Baščaršija'
           required: true
+          schema:
+            type: string
+        - name: line
+          in: query
+          description: Line name
+          example: '3'
+          required: false
+          schema:
+            type: string
+        - name: direction
+          in: query
+          description: Direction of the line
+          example: 'Ilidža'
+          required: false
           schema:
             type: string
         - name: limit
           in: query
           description: Limit the number of departures to be returned for all directions. Defaults to 5 if not provided.
+          example: 5
           required: false
           schema:
             type: number

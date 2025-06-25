@@ -9,8 +9,14 @@ export default class DeparturesController {
     }
 
     async getScheduledDepartures(req: Request, res: Response) {
-        const {from, after, limit} = req.query as {from: string, after: string | undefined, limit: number | undefined};
-        const departures = await this.departuresService.getScheduledDepartures(from, after, limit);
+        const {from, line, direction, after, limit} = req.query as {
+            from: string,
+            line: string | undefined,
+            direction: string | undefined,
+            after: string | undefined,
+            limit: number | undefined
+        };
+        const departures = await this.departuresService.getScheduledDepartures(from, line, direction, after, limit);
         if (departures) {
             res.status(200).json(departures);
         } else {
@@ -19,8 +25,13 @@ export default class DeparturesController {
     }
 
     async getNextDepartures(req: Request, res: Response) {
-        const {from, limit} = req.query as {from: string, limit: number | undefined};
-        const departures = await this.departuresService.getNextDepartures(from, limit);
+        const {from, line, direction, limit} = req.query as {
+            from: string,
+            line: string | undefined,
+            direction: string | undefined,
+            limit: number | undefined
+        };
+        const departures = await this.departuresService.getNextDepartures(from, line, direction, limit);
         if (departures) {
             res.status(200).json(departures);
         } else {
