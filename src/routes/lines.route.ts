@@ -14,7 +14,7 @@ class LinesRoute {
 
     private initRoutes() {
         this.router.get('/', this.linesController.getAllLines.bind(this.linesController));
-        this.router.get('/describe', this.linesController.describeLineRoute.bind(this.linesController));
+        this.router.get('/describe-route', this.linesController.describeLineRoute.bind(this.linesController));
         this.router.get('/describe-line', this.linesController.describeLine.bind(this.linesController));
         this.router.get('/describe-all', this.linesController.describeAllLines.bind(this.linesController));
     }
