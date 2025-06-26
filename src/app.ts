@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
+import cors from 'cors';
 import linesRoute from './routes/lines.route';
 import * as OpenApiValidator from 'express-openapi-validator';
 import { ValidationError } from 'express-openapi-validator/dist/framework/types';
@@ -19,6 +20,7 @@ app.use(OpenApiValidator.middleware({
 const swaggerDoc = YAML.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
 app.use('/api-docs', SwaggerUI.serve, SwaggerUI.setup(swaggerDoc));
 
+app.use(cors());
 app.use(helmet());
 app.use(express.json());
 app.use(express.static("public"));
