@@ -108,7 +108,8 @@ export default class DeparturesService extends DataAccessService {
             }
 
             // apply the delay to the edges' departure times and return the result as a DepartureByLine (line name ->
-            // direction -> times)
+            // direction -> datetimes)
+            const now = new Date();
             return lineStops.filter(d => d.stop.name == from)
                 .filter(d => Object.keys(departuresByLine).includes(d.line.name))
                 .map(r => {
@@ -132,7 +133,9 @@ export default class DeparturesService extends DataAccessService {
                             departures: {} as { [direction: string]: Departure[] }
                         };
                     }
-                    out[departure.line].departures[departure.direction] = departure.departures.map(d => ({'scheduledAt': d.toLocaleString('bs-BA', {timeStyle: 'short'})}));
+                    departure.departures.forEach(d => d.setFullYear(now.getFullYear(), now.getMonth(), now.getDate()));
+                    out[departure.line].departures[departure.direction] = departure.departures
+                        .map(d => ({'scheduledAt': d.toISOString()}));
                     return out;
                 }, {} as DepartureByLine);
         }).catch((err: Error) => {
@@ -143,6 +146,7 @@ export default class DeparturesService extends DataAccessService {
 
     async getNextDepartures(from: string, line?: string, direction?: string, limit?: number): Promise<DepartureByLine> {
         const after = new Date();
+        after.setSeconds(0, 0);
         return this.getScheduledDepartures(from, line, direction, after, limit || 5);
     }
 }

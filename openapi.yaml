@@ -275,8 +275,8 @@ components:
         scheduledAt:
           type: string
           description: The scheduled time of departure
-          pattern: '^\d{2}-\d{2}$'
-          example: '05:00'
+          format: date-time
+          example: '2025-01-01T07:00:00.000Z'
     DeparturesByLine:
       type: object
       description: Departures grouped by line and direction
@@ -301,24 +301,24 @@ components:
           type: tram
           departures:
             Baščaršija:
-              - scheduledAt: "00:00"
-              - scheduledAt: "00:04"
-              - scheduledAt: "00:08"
+              - scheduledAt: "2025-01-01T00:00:00.000Z"
+              - scheduledAt: "2025-01-01T00:04:00.000Z"
+              - scheduledAt: "2025-01-01T00:08:00.000Z"
             Ilidža:
-              - scheduledAt: "00:00"
-              - scheduledAt: "00:04"
-              - scheduledAt: "00:08"
+              - scheduledAt: "2025-01-01T00:00:00.000Z"
+              - scheduledAt: "2025-01-01T00:04:00.000Z"
+              - scheduledAt: "2025-01-01T00:08:00.000Z"
         103:
           type: trolleybus
           departures:
             Dobrinja:
-              - scheduledAt: "00:00"
-              - scheduledAt: "00:04"
-              - scheduledAt: "00:08"
+              - scheduledAt: "2025-01-01T00:00:00.000Z"
+              - scheduledAt: "2025-01-01T00:04:00.000Z"
+              - scheduledAt: "2025-01-01T00:08:00.000Z"
             Trg Austrije:
-              - scheduledAt: "00:00"
-              - scheduledAt: "00:04"
-              - scheduledAt: "00:08"
+              - scheduledAt: "2025-01-01T00:00:00.000Z"
+              - scheduledAt: "2025-01-01T00:04:00.000Z"
+              - scheduledAt: "2025-01-01T00:08:00.000Z"
     Route:
       type: object
       description: A route taken by a line
