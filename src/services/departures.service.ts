@@ -117,7 +117,7 @@ export default class DeparturesService extends DataAccessService {
                     const lineDepartures = Object.keys(departuresByLine).includes(r.line.name) ? departuresByLine[r.line.name].departures : {};
                     const times = (Object.keys(lineDepartures).includes(r.direction) ? lineDepartures[r.direction] : [])
                         .map(d => new Date(d.getTime() + delay * 60_000))
-                        .filter(d => d > getAfter);
+                        .filter(d => d >= getAfter);
                     const departures = !limit ? times : times.slice(0, limit);
                     return {
                         line: r.line.name,
