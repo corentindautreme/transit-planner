@@ -216,7 +216,7 @@ paths:
       tags:
         - stops
       summary: List all stops
-      description: List all stop names
+      description: List all stops on the network with the lines that serve it (as a list of connections)
       operationId: getAllStops
       responses:
         '200':
@@ -226,13 +226,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  description: A stop on the transport network
-                  properties:
-                    name:
-                      type: string
-                      description: The name of the stop
-                      example: 'Baščaršija'
+                  $ref: "#/components/schemas/Stop"
 components:
   schemas:
     Line:
