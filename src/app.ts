@@ -8,6 +8,7 @@ import departuresRoute from './routes/departures.route';
 import * as YAML from 'yaml';
 import * as fs from 'node:fs';
 import * as SwaggerUI from 'swagger-ui-express';
+import stopsRoute from './routes/stops.route';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use(express.static("public"));
 // API Routes
 app.use('/lines', linesRoute);
 app.use('/departures', departuresRoute);
+app.use('/stops', stopsRoute);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

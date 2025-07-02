@@ -15,6 +15,8 @@ tags:
     description: Line static data (line code, stops...)
   - name: departures
     description: Departure times
+  - name: stops
+    description: Stop static data
 paths:
   /lines:
     get:
@@ -209,6 +211,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeparturesByLine'
+  /stops:
+    get:
+      tags:
+        - stops
+      summary: List all stops
+      description: List all stop names
+      operationId: getAllStops
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  description: A stop on the transport network
+                  properties:
+                    name:
+                      type: string
+                      description: The name of the stop
+                      example: 'Baščaršija'
 components:
   schemas:
     Line:
