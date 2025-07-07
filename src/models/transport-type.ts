@@ -1,1 +1,1 @@
-export type TransportType = 'tram' | 'trolleybus';
+export type TransportType = 'tram' | 'trolleybus' | 'bus';

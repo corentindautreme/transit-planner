@@ -243,6 +243,7 @@ components:
           enum:
             - tram
             - trolleybus
+            - bus
         directions:
           type: array
           items:
@@ -281,6 +282,7 @@ components:
           enum:
             - tram
             - trolleybus
+            - bus
           example: trolleybus
         directions:
           type: array
@@ -311,6 +313,7 @@ components:
             enum:
               - tram
               - trolleybus
+              - bus
           departures:
             type: object
             description: Departures for the line grouped by direction
@@ -367,6 +370,7 @@ components:
           enum:
             - tram
             - trolleybus
+            - bus
         directions:
           type: array
           items:
