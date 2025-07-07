@@ -1,6 +1,6 @@
 export interface Stop {
     name: string;
-    connections?: Connection[];
+    connections: Connection[];
 }
 
 export interface Connection {

@@ -15,6 +15,8 @@ tags:
     description: Line static data (line code, stops...)
   - name: departures
     description: Departure times
+  - name: stops
+    description: Stop static data
 paths:
   /lines:
     get:
@@ -42,7 +44,8 @@ paths:
       parameters:
         - name: name
           in: query
-          description: Line name (e.g. `3`)
+          description: Line name
+          example: '3'
           required: true
           schema:
             type: string
@@ -67,13 +70,15 @@ paths:
       parameters:
         - name: name
           in: query
-          description: Line name (e.g. `3`)
+          description: Line name
+          example: '3'
           required: true
           schema:
             type: string
         - name: direction
           in: query
           description: Direction of the line
+          example: 'Baščaršija'
           required: true
           schema:
             type: string
@@ -93,9 +98,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/Stop'
         '400':
-          description: Invalid direction for the provided line
+          description: The provided stop is not on the provided line, or not served in the provided direction
         '404':
-          description: Stop is not on the provided line
+          description: Could not find the provided line, or the provided line exists but doesn't go in the provided direction
   /lines/describe-all:
     get:
       tags:
@@ -122,14 +127,29 @@ paths:
       parameters:
         - name: from
           in: query
-          description: Stop (e.g. `Baščaršija`)
+          description: Stop
           example: 'Baščaršija'
           required: true
           schema:
             type: string
+        - name: line
+          in: query
+          description: Line name
+          example: '3'
+          required: false
+          schema:
+            type: string
+        - name: direction
+          in: query
+          description: Direction of the line
+          example: 'Ilidža'
+          required: false
+          schema:
+            type: string
         - name: after
           in: query
-          description: Time from which departures should be included (e.g. `2025-01-01T07:00:00.000Z`). Returns all scheduled departures (or the first X scheduled departures, where X is the value set in the `limit` parameter) for the day if not provided
+          description: Time from which departures should be included. Returns all scheduled departures (or the first X scheduled departures, where X is the value set in the `limit` parameter) for the day if not provided
+          example: '2025-01-01T07:00:00.000Z'
           required: false
           schema:
             type: string
@@ -137,6 +157,7 @@ paths:
         - name: limit
           in: query
           description: Limit the number of departures to be returned for all directions. Returns all scheduled departures (or all departures scheduled after the time set in `after`) for the day if not provided
+          example: 5
           required: false
           schema:
             type: number
@@ -146,9 +167,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Departure'
+                $ref: '#/components/schemas/DeparturesByLine'
   /departures/next:
     get:
       tags:
@@ -159,14 +178,29 @@ paths:
       parameters:
         - name: from
           in: query
-          description: Stop (e.g. `Baščaršija`)
+          description: Stop
           example: 'Baščaršija'
           required: true
+          schema:
+            type: string
+        - name: line
+          in: query
+          description: Line name
+          example: '3'
+          required: false
+          schema:
+            type: string
+        - name: direction
+          in: query
+          description: Direction of the line
+          example: 'Ilidža'
+          required: false
           schema:
             type: string
         - name: limit
           in: query
           description: Limit the number of departures to be returned for all directions. Defaults to 5 if not provided.
+          example: 5
           required: false
           schema:
             type: number
@@ -176,9 +210,23 @@ paths:
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/DeparturesByLine'
+  /stops:
+    get:
+      tags:
+        - stops
+      summary: List all stops
+      description: List all stops on the network with the lines that serve it (as a list of connections)
+      operationId: getAllStops
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Departure'
+                  $ref: "#/components/schemas/Stop"
 components:
   schemas:
     Line:
@@ -245,11 +293,53 @@ components:
         scheduledAt:
           type: string
           description: The scheduled time of departure
-          pattern: '^\d{2}-\d{2}$'
-          example: '05:00'
+          format: date-time
+          example: '2025-01-01T07:00:00.000Z'
+    DeparturesByLine:
+      type: object
+      description: Departures grouped by line and direction
+      additionalProperties:
+        type: object
+        properties:
+          type:
+            type: string
+            description: The type of transport of the line
+            enum:
+              - tram
+              - trolleybus
+          departures:
+            type: object
+            description: Departures for the line grouped by direction
+            additionalProperties:
+              type: array
+              items:
+                $ref: "#/components/schemas/Departure"
+      example:
+        3:
+          type: tram
+          departures:
+            Baščaršija:
+              - scheduledAt: "2025-01-01T00:00:00.000Z"
+              - scheduledAt: "2025-01-01T00:04:00.000Z"
+              - scheduledAt: "2025-01-01T00:08:00.000Z"
+            Ilidža:
+              - scheduledAt: "2025-01-01T00:00:00.000Z"
+              - scheduledAt: "2025-01-01T00:04:00.000Z"
+              - scheduledAt: "2025-01-01T00:08:00.000Z"
+        103:
+          type: trolleybus
+          departures:
+            Dobrinja:
+              - scheduledAt: "2025-01-01T00:00:00.000Z"
+              - scheduledAt: "2025-01-01T00:04:00.000Z"
+              - scheduledAt: "2025-01-01T00:08:00.000Z"
+            Trg Austrije:
+              - scheduledAt: "2025-01-01T00:00:00.000Z"
+              - scheduledAt: "2025-01-01T00:04:00.000Z"
+              - scheduledAt: "2025-01-01T00:08:00.000Z"
     Route:
       type: object
-      description: A followed taken by a line
+      description: A route taken by a line
       properties:
         direction:
           type: string

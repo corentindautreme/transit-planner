@@ -12,7 +12,11 @@ export default class LinesController {
     }
 
     async getAllLines(req: Request, res: Response) {
-        res.status(200).json(await this.linesService.getAllLines());
+        this.linesService.getAllLines()
+            .then(lines => res.status(200).json(lines))
+            .catch((err: Error) => {
+                res.status(500).json({error: err.message});
+            });
     }
 
     async describeLineRoute(req: Request, res: Response) {
@@ -29,8 +33,6 @@ export default class LinesController {
                     status = 400;
                     errorMessage = err.message;
                 } else {
-                    // TODO chain promise from prisma request and log error in a catch there (and not at controller level)
-                    console.error(err);
                     status = 500;
                     errorMessage = err.message;
                 }

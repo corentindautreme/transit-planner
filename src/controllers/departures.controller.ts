@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import DeparturesService from '../services/departures.service';
+import { DepartureByLine } from '../models/departures';
+import { LineNotFoundError } from '../models/error/line-not-found';
+import { StopNotFound } from '../models/error/stop-not-found';
 
 export default class DeparturesController {
     private readonly departuresService: DeparturesService;
@@ -9,22 +12,55 @@ export default class DeparturesController {
     }
 
     async getScheduledDepartures(req: Request, res: Response) {
-        const {from, after, limit} = req.query as {from: string, after: string | undefined, limit: number | undefined};
-        const departures = await this.departuresService.getScheduledDepartures(from, after, limit);
-        if (departures) {
-            res.status(200).json(departures);
-        } else {
-            res.status(404).json({'error': `No departures found for stop ${from}`});
-        }
+        const {from, line, direction, after, limit} = req.query as {
+            from: string,
+            line: string | undefined,
+            direction: string | undefined,
+            after: string | undefined,
+            limit: number | undefined
+        };
+        this.departuresService.getScheduledDepartures(from, line, direction, after, limit)
+            .then((departures: DepartureByLine) => res.status(200).json(departures))
+            .catch((err: Error) => {
+                let errorMessage: string;
+                let status: number;
+                if (err instanceof LineNotFoundError) {
+                    status = 404;
+                    errorMessage = err.message;
+                } else if (err instanceof StopNotFound) {
+                    status = 400;
+                    errorMessage = err.message;
+                } else {
+                    status = 500;
+                    errorMessage = err.message;
+                }
+                res.status(status).json({error: errorMessage});
+            });
     }
 
     async getNextDepartures(req: Request, res: Response) {
-        const {from, limit} = req.query as {from: string, limit: number | undefined};
-        const departures = await this.departuresService.getNextDepartures(from, limit);
-        if (departures) {
-            res.status(200).json(departures);
-        } else {
-            res.status(404).json({'error': `No departures found for stop ${from}`});
-        }
+        const {from, line, direction, limit} = req.query as {
+            from: string,
+            line: string | undefined,
+            direction: string | undefined,
+            limit: number | undefined
+        };
+        this.departuresService.getNextDepartures(from, line, direction, limit)
+            .then((departures: DepartureByLine) => res.status(200).json(departures))
+            .catch((err: Error) => {
+                let errorMessage: string;
+                let status: number;
+                if (err instanceof LineNotFoundError) {
+                    status = 404;
+                    errorMessage = err.message;
+                } else if (err instanceof StopNotFound) {
+                    status = 400;
+                    errorMessage = err.message;
+                } else {
+                    status = 500;
+                    errorMessage = err.message;
+                }
+                res.status(status).json({error: errorMessage});
+            });
     }
 }

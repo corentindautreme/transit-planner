@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
+import cors from 'cors';
 import linesRoute from './routes/lines.route';
 import * as OpenApiValidator from 'express-openapi-validator';
 import { ValidationError } from 'express-openapi-validator/dist/framework/types';
@@ -7,6 +8,7 @@ import departuresRoute from './routes/departures.route';
 import * as YAML from 'yaml';
 import * as fs from 'node:fs';
 import * as SwaggerUI from 'swagger-ui-express';
+import stopsRoute from './routes/stops.route';
 
 const app = express();
 
@@ -19,6 +21,7 @@ app.use(OpenApiValidator.middleware({
 const swaggerDoc = YAML.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
 app.use('/api-docs', SwaggerUI.serve, SwaggerUI.setup(swaggerDoc));
 
+app.use(cors());
 app.use(helmet());
 app.use(express.json());
 app.use(express.static("public"));
@@ -26,6 +29,7 @@ app.use(express.static("public"));
 // API Routes
 app.use('/lines', linesRoute);
 app.use('/departures', departuresRoute);
+app.use('/stops', stopsRoute);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
