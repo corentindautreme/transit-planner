@@ -8,13 +8,9 @@ export default class StopsService extends DataAccessService {
     }
 
     async getAllStops(): Promise<Stop[]> {
-        // return this.prismaClient.stop.findMany({
-        //     select: {name: true},
-        //     orderBy: {name: 'asc'}
-        // }).then(stop => stop as Stop[]);
         return this.prismaClient.line_stop.findMany({
             select: {
-                stop: {select: {name: true}},
+                stop: {select: {id: true, name: true}},
                 line: {select: {name: true, type: true}},
                 direction: true
             },
@@ -22,7 +18,7 @@ export default class StopsService extends DataAccessService {
             distinct: ['id_line', 'id_stop', 'direction']
         }).then(lineStops => lineStops as ({
                 direction: string,
-                stop: { name: string },
+                stop: { id: number, name: string },
                 line: { name: string, type: TransportType }
             })[]
         ).then(lineStops => lineStops.reduce((stops, ls) => {
@@ -42,6 +38,7 @@ export default class StopsService extends DataAccessService {
                 } else {
                     // new stop
                     stops.push({
+                        id: ls.stop.id,
                         name: ls.stop.name,
                         connections: [{
                             line: ls.line.name,

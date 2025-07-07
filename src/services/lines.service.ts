@@ -112,6 +112,7 @@ export default class LinesService extends DataAccessService {
                 direction: true,
                 stop: {
                     select: {
+                        id: true,
                         name: true,
                         line_stop: {
                             select: {
@@ -137,6 +138,7 @@ export default class LinesService extends DataAccessService {
                 lineStopsByLineAndDirection[lineStop.line.name].routes[lineStop.direction] = [];
             }
             lineStopsByLineAndDirection[lineStop.line.name].routes[lineStop.direction].push({
+                id: lineStop.stop.id,
                 name: lineStop.stop.name,
                 connections: Object
                     .entries(lineStop.stop.line_stop
