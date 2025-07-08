@@ -7,13 +7,14 @@ export default class DeparturesService extends DataAccessService {
         super();
     }
 
-    async getScheduledDepartures(from: string, line?: string, direction?: string, after?: string | Date, limit?: number): Promise<DepartureByLine> {
+    async getScheduledDepartures(from: number, line?: string, direction?: string, after?: string | Date, limit?: number): Promise<DepartureByLine> {
         return this.prismaClient.line_stop.findMany({
             select: {
                 direction: true,
                 line: {select: {name: true, type: true}},
                 stop: {
                     select: {
+                        id: true,
                         name: true,
                         departure: {
                             select: {time_utc: true, line: {select: {name: true}}, direction: true},
@@ -41,23 +42,20 @@ export default class DeparturesService extends DataAccessService {
                         line: {
                             line_stop: {
                                 some: {
-                                    stop: {
-                                        name: from
-                                    }
+                                    id_stop: from
                                 },
                             }
                         }
                     },
                     {
-                        stop: {
-                            name: from
-                        }
+                        id_stop: from
                     }
                 ]
             }
         }).then(lineStops => lineStops as {
                 line: { name: string, type: TransportType },
                 stop: {
+                    id: number
                     name: string,
                     departure: { line: { name: string }, direction: string, time_utc: Date }[],
                     departure_delay: {
@@ -68,7 +66,7 @@ export default class DeparturesService extends DataAccessService {
                 },
                 direction: string,
             }[]
-        ).then(lineStops => lineStops.filter(lineStop => lineStop.direction != from) // discard departures from a stop that's final stop
+        ).then(lineStops => lineStops.filter(lineStop => lineStop.direction != lineStop.stop.name) // discard departures from a stop that's final stop
         ).then(lineStops => {
             // extract the departures from all edges of all lines that are serving our stop
             const departuresByLine = lineStops
@@ -110,7 +108,7 @@ export default class DeparturesService extends DataAccessService {
             // apply the delay to the edges' departure times and return the result as a DepartureByLine (line name ->
             // direction -> datetimes)
             const now = new Date();
-            return lineStops.filter(d => d.stop.name == from)
+            return lineStops.filter(d => d.stop.id == from)
                 .filter(d => Object.keys(departuresByLine).includes(d.line.name))
                 .map(r => {
                     const delay: number = r.stop.departure_delay.filter(delay => delay.line.name == r.line.name && delay.direction == r.direction)[0]?.delay || 0;
@@ -144,7 +142,7 @@ export default class DeparturesService extends DataAccessService {
         });
     }
 
-    async getNextDepartures(from: string, line?: string, direction?: string, limit?: number): Promise<DepartureByLine> {
+    async getNextDepartures(from: number, line?: string, direction?: string, limit?: number): Promise<DepartureByLine> {
         const after = new Date();
         after.setSeconds(0, 0);
         return this.getScheduledDepartures(from, line, direction, after, limit || 5);

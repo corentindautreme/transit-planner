@@ -84,10 +84,10 @@ paths:
             type: string
         - name: from
           in: query
-          description: A stop of the line from which to start describing the line
+          description: The internal ID of a stop of the line from which to start describing the line
           required: false
           schema:
-            type: string
+            type: number
       responses:
         '200':
           description: Successful operation
@@ -127,11 +127,11 @@ paths:
       parameters:
         - name: from
           in: query
-          description: Stop
-          example: 'Baščaršija'
+          description: Internal ID of the stop
+          example: 24
           required: true
           schema:
-            type: string
+            type: number
         - name: line
           in: query
           description: Line name
@@ -178,11 +178,11 @@ paths:
       parameters:
         - name: from
           in: query
-          description: Stop
-          example: 'Baščaršija'
+          description: Internal ID of the stop
+          example: 24
           required: true
           schema:
-            type: string
+            type: number
         - name: line
           in: query
           description: Line name
@@ -259,7 +259,7 @@ components:
         id:
           type: number
           description: An internal ID for the stop
-          example: 1
+          example: 24
         name:
           type: string
           description: The name of the stop

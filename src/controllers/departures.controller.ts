@@ -12,8 +12,8 @@ export default class DeparturesController {
     }
 
     async getScheduledDepartures(req: Request, res: Response) {
-        const {from, line, direction, after, limit} = req.query as {
-            from: string,
+        const from = parseInt(req.query.from as string);
+        const {line, direction, after, limit} = req.query as {
             line: string | undefined,
             direction: string | undefined,
             after: string | undefined,
@@ -39,8 +39,8 @@ export default class DeparturesController {
     }
 
     async getNextDepartures(req: Request, res: Response) {
-        const {from, line, direction, limit} = req.query as {
-            from: string,
+        const from = parseInt(req.query.from as string);
+        const {line, direction, limit} = req.query as {
             line: string | undefined,
             direction: string | undefined,
             limit: number | undefined

@@ -30,12 +30,13 @@ export default class LinesService extends DataAccessService {
         } as Line)));
     }
 
-    async describeLineRoute(name: string, direction: string, from?: string): Promise<Stop[]> {
+    async describeLineRoute(name: string, direction: string, from?: number): Promise<Stop[]> {
         return this.prismaClient.line_stop.findMany({
             select: {
                 line: {select: {name: true}},
                 stop: {
                     select: {
+                        id: true,
                         name: true,
                         line_stop: {
                             select: {
@@ -61,6 +62,7 @@ export default class LinesService extends DataAccessService {
             }
             return lineStops;
         }).then(lineStops => lineStops.map(ls => ({
+                id: ls.stop.id,
                 name: ls.stop.name,
                 connections: Object
                     .entries(ls.stop.line_stop
@@ -85,11 +87,11 @@ export default class LinesService extends DataAccessService {
             } as Stop))
         ).then(route => {
             if (!!from) {
-                const indexOfFrom = route.findIndex((s: Stop) => s.name === from);
+                const indexOfFrom = route.findIndex((s: Stop) => s.id === from);
                 if (indexOfFrom > -1) {
                     return route.slice(indexOfFrom);
                 }
-                throw new StopNotFound(`Stop ${from} does not exist on line ${name} in direction of ${direction}`);
+                throw new StopNotFound(`A stop with internal ID ${from} does not exist on line ${name} in direction of ${direction}`);
             }
             return route;
         }).catch((err: Error) => {
