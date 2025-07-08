@@ -167,7 +167,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeparturesByLine'
+                $ref: '#/components/schemas/DeparturesAtStop'
   /departures/next:
     get:
       tags:
@@ -210,7 +210,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeparturesByLine'
+                $ref: '#/components/schemas/DeparturesAtStop'
   /stops:
     get:
       tags:
@@ -301,6 +301,14 @@ components:
           description: The scheduled time of departure
           format: date-time
           example: '2025-01-01T07:00:00.000Z'
+    DeparturesAtStop:
+      type: object
+      description: Departures at a stop, alongside stop details
+      properties:
+        stop:
+          $ref: "#/components/schemas/Stop"
+        departures:
+          $ref: "#/components/schemas/DeparturesByLine"
     DeparturesByLine:
       type: object
       description: Departures grouped by line and direction

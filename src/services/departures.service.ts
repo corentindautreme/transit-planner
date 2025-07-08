@@ -1,13 +1,14 @@
 import DataAccessService from './data.access.service';
-import { Departure, DepartureByLine } from '../models/departures';
+import { Departure, DepartureByLine, DeparturesAtStop } from '../models/departures';
 import { TransportType } from '../models/transport-type';
+import { Connection } from '../models/stop';
 
 export default class DeparturesService extends DataAccessService {
     constructor() {
         super();
     }
 
-    async getScheduledDepartures(from: number, line?: string, direction?: string, after?: string | Date, limit?: number): Promise<DepartureByLine> {
+    async getScheduledDepartures(from: number, line?: string, direction?: string, after?: string | Date, limit?: number): Promise<DeparturesAtStop> {
         return this.prismaClient.line_stop.findMany({
             select: {
                 direction: true,
@@ -27,6 +28,12 @@ export default class DeparturesService extends DataAccessService {
                                 delay: true
                             },
                             orderBy: {direction: 'asc'}
+                        },
+                        line_stop: {
+                            select: {
+                                line: {select: {name: true, type: true}},
+                                direction: true
+                            }
                         }
                     }
                 },
@@ -62,11 +69,12 @@ export default class DeparturesService extends DataAccessService {
                         direction: string,
                         delay: number,
                         line: { name: string }
-                    }[]
+                    }[],
+                    line_stop: { line: { name: string, type: string }, direction: string } []
                 },
                 direction: string,
             }[]
-        ).then(lineStops => lineStops.filter(lineStop => lineStop.direction != lineStop.stop.name) // discard departures from a stop that's final stop
+        ).then(lineStops => lineStops.filter(lineStop => lineStop.direction != lineStop.stop.name) // discard departures from a stop that's a final stop
         ).then(lineStops => {
             // extract the departures from all edges of all lines that are serving our stop
             const departuresByLine = lineStops
@@ -108,41 +116,66 @@ export default class DeparturesService extends DataAccessService {
             // apply the delay to the edges' departure times and return the result as a DepartureByLine (line name ->
             // direction -> datetimes)
             const now = new Date();
-            return lineStops.filter(d => d.stop.id == from)
-                .filter(d => Object.keys(departuresByLine).includes(d.line.name))
-                .map(r => {
-                    const delay: number = r.stop.departure_delay.filter(delay => delay.line.name == r.line.name && delay.direction == r.direction)[0]?.delay || 0;
-                    const lineDepartures = Object.keys(departuresByLine).includes(r.line.name) ? departuresByLine[r.line.name].departures : {};
-                    const times = (Object.keys(lineDepartures).includes(r.direction) ? lineDepartures[r.direction] : [])
-                        .map(d => new Date(d.getTime() + delay * 60_000))
-                        .filter(d => d >= getAfter);
-                    const departures = !limit ? times : times.slice(0, limit);
-                    return {
-                        line: r.line.name,
-                        type: r.line.type,
-                        direction: r.direction,
-                        departures: departures
-                    };
-                })
-                .reduce((out, departure) => {
-                    if (!(departure.line in out)) {
-                        out[departure.line] = {
-                            type: departure.type,
-                            departures: {} as { [direction: string]: Departure[] }
+            const lineStopOccurrences = lineStops.filter(d => d.stop.id === from);
+            return {
+                stop: {
+                    id: lineStopOccurrences[0].stop.id,
+                    name: lineStopOccurrences[0].stop.name,
+                    connections: Object
+                        .entries(lineStopOccurrences[0].stop.line_stop
+                            // map as a line => line_stop[] object
+                            .reduce((connectionsByLine, lineStop) => {
+                                if (!(lineStop.line.name in connectionsByLine)) {
+                                    connectionsByLine[lineStop.line.name] = [];
+                                }
+                                connectionsByLine[lineStop.line.name].push(lineStop);
+                                return connectionsByLine;
+                            }, {} as { [line: string]: { line: { name: string, type: string }, direction: string }[] })
+                        )
+                        // map as a list of connections and sort them by type, then line name
+                        .map(([lineName, lineStops]) => ({
+                            line: lineName,
+                            type: lineStops[0].line.type,
+                            directions: lineStops.map(ls => ls.direction)
+                        } as Connection))
+                        .sort((c1, c2) => c1.type != c2.type ? c1.type.localeCompare(c2.type) : c1.line.localeCompare(c2.line))
+                },
+                departures: lineStopOccurrences
+                    .filter(d => Object.keys(departuresByLine).includes(d.line.name))
+                    .map(r => {
+                        const delay: number = r.stop.departure_delay.filter(delay => delay.line.name == r.line.name && delay.direction == r.direction)[0]?.delay || 0;
+                        const lineDepartures = Object.keys(departuresByLine).includes(r.line.name) ? departuresByLine[r.line.name].departures : {};
+                        const times = (Object.keys(lineDepartures).includes(r.direction) ? lineDepartures[r.direction] : [])
+                            .map(d => new Date(d.getTime() + delay * 60_000))
+                            .filter(d => d >= getAfter);
+                        const departures = !limit ? times : times.slice(0, limit);
+                        return {
+                            line: r.line.name,
+                            type: r.line.type,
+                            direction: r.direction,
+                            departures: departures
                         };
-                    }
-                    departure.departures.forEach(d => d.setFullYear(now.getFullYear(), now.getMonth(), now.getDate()));
-                    out[departure.line].departures[departure.direction] = departure.departures
-                        .map(d => ({'scheduledAt': d.toISOString()}));
-                    return out;
-                }, {} as DepartureByLine);
+                    })
+                    .reduce((out, departure) => {
+                        if (!(departure.line in out)) {
+                            out[departure.line] = {
+                                type: departure.type,
+                                departures: {} as { [direction: string]: Departure[] }
+                            };
+                        }
+                        departure.departures.forEach(d => d.setFullYear(now.getFullYear(), now.getMonth(), now.getDate()));
+                        out[departure.line].departures[departure.direction] = departure.departures
+                            .map(d => ({'scheduledAt': d.toISOString()}));
+                        return out;
+                    }, {} as DepartureByLine)
+            } as DeparturesAtStop;
         }).catch((err: Error) => {
             console.error(err);
             throw err;
         });
     }
 
-    async getNextDepartures(from: number, line?: string, direction?: string, limit?: number): Promise<DepartureByLine> {
+    async getNextDepartures(from: number, line?: string, direction?: string, limit?: number): Promise<DeparturesAtStop> {
         const after = new Date();
         after.setSeconds(0, 0);
         return this.getScheduledDepartures(from, line, direction, after, limit || 5);
