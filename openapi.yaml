@@ -84,10 +84,10 @@ paths:
             type: string
         - name: from
           in: query
-          description: A stop of the line from which to start describing the line
+          description: The internal ID of a stop of the line from which to start describing the line
           required: false
           schema:
-            type: string
+            type: number
       responses:
         '200':
           description: Successful operation
@@ -127,11 +127,11 @@ paths:
       parameters:
         - name: from
           in: query
-          description: Stop
-          example: 'Baščaršija'
+          description: Internal ID of the stop
+          example: 24
           required: true
           schema:
-            type: string
+            type: number
         - name: line
           in: query
           description: Line name
@@ -167,7 +167,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeparturesByLine'
+                $ref: '#/components/schemas/DeparturesAtStop'
   /departures/next:
     get:
       tags:
@@ -178,11 +178,11 @@ paths:
       parameters:
         - name: from
           in: query
-          description: Stop
-          example: 'Baščaršija'
+          description: Internal ID of the stop
+          example: 24
           required: true
           schema:
-            type: string
+            type: number
         - name: line
           in: query
           description: Line name
@@ -210,7 +210,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeparturesByLine'
+                $ref: '#/components/schemas/DeparturesAtStop'
   /stops:
     get:
       tags:
@@ -243,6 +243,7 @@ components:
           enum:
             - tram
             - trolleybus
+            - bus
         directions:
           type: array
           items:
@@ -255,6 +256,10 @@ components:
       type: object
       description: A stop on the transport network
       properties:
+        id:
+          type: number
+          description: An internal ID for the stop
+          example: 24
         name:
           type: string
           description: The name of the stop
@@ -277,6 +282,7 @@ components:
           enum:
             - tram
             - trolleybus
+            - bus
           example: trolleybus
         directions:
           type: array
@@ -295,6 +301,14 @@ components:
           description: The scheduled time of departure
           format: date-time
           example: '2025-01-01T07:00:00.000Z'
+    DeparturesAtStop:
+      type: object
+      description: Departures at a stop, alongside stop details
+      properties:
+        stop:
+          $ref: "#/components/schemas/Stop"
+        departures:
+          $ref: "#/components/schemas/DeparturesByLine"
     DeparturesByLine:
       type: object
       description: Departures grouped by line and direction
@@ -307,6 +321,7 @@ components:
             enum:
               - tram
               - trolleybus
+              - bus
           departures:
             type: object
             description: Departures for the line grouped by direction
@@ -363,6 +378,7 @@ components:
           enum:
             - tram
             - trolleybus
+            - bus
         directions:
           type: array
           items:

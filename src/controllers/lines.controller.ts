@@ -20,7 +20,8 @@ export default class LinesController {
     }
 
     async describeLineRoute(req: Request, res: Response) {
-        const {name, direction, from} = req.query as { name: string, direction: string, from?: string };
+        const {name, direction} = req.query as { name: string, direction: string };
+        const from = 'from' in req.query ? parseInt(req.query.from as string) : undefined;
         this.linesService.describeLineRoute(name, direction, from)
             .then((route: Stop[]) => res.status(200).json(route))
             .catch((err: Error) => {

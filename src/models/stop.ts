@@ -1,4 +1,5 @@
 export interface Stop {
+    id?: number;
     name: string;
     connections: Connection[];
 }
