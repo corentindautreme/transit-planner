@@ -9,7 +9,7 @@
     "lint": "eslint src/**/*.ts",
     "test": "echo \"Defaulting to running UT (testut)\" && jest --testPathIgnorePatterns=.*\\.integration.test.ts --setupFilesAfterEnv ./test/config/prisma.mock.ts",
     "testut": "jest --testPathIgnorePatterns=.*\\.integration.test.ts --setupFilesAfterEnv ./test/config/prisma.mock.ts",
-    "testit": "jest .*.integration.test.ts --setupFilesAfterEnv ./test/config/it-mocks.ts"
+    "testit": "jest .*.integration.test.ts --runInBand --setupFilesAfterEnv ./test/config/it-mocks.ts"
   },
   "keywords": [],
   "author": "",
