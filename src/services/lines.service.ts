@@ -107,7 +107,7 @@ export default class LinesService extends DataAccessService {
     }
 
 // TODO have directions returned in the same order as in getAllLines
-    async describeLines(names ?: string[]): Promise<DescribedLine[]> {
+    async describeLines(names?: string[]): Promise<DescribedLine[]> {
         return this.prismaClient.line_stop.findMany({
             select: {
                 line: {select: {name: true, type: true}},
@@ -116,6 +116,8 @@ export default class LinesService extends DataAccessService {
                     select: {
                         id: true,
                         name: true,
+                        // we're repeating data here (all these line stops would already be present in the output), but
+                        // this is to avoid re-grouping line_stops per stop (which we need to derive connections)
                         line_stop: {
                             select: {
                                 line: {select: {name: true, type: true}},
@@ -144,7 +146,7 @@ export default class LinesService extends DataAccessService {
                 name: lineStop.stop.name,
                 connections: Object
                     .entries(lineStop.stop.line_stop
-                        // don't list the current line as a connection at that stop
+                        // don't list the current line as a connection at that stop = exclude the line_stops for that line
                         .filter(s => s.line.name != lineStop.line.name)
                         // map as a line => line_stop[] object
                         .reduce((connectionsByLine, lineStop) => {

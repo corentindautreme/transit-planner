@@ -10,7 +10,8 @@
     "lib": [
       "es2024",
       "dom"
-    ]
+    ],
+    "types": ["jest"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
