@@ -21,6 +21,7 @@ describe('With existing line data', () => {
     it('should return all lines of the network', async () => {
         expect(await prisma.line.count()).toBe(3);
         const lines = await linesService.getAllLines();
+        expect(lines).toHaveLength(3);
         expect(lines[0].name).toEqual('1');
         expect(lines[0].type).toEqual('tram');
         expect(lines[1].name).toEqual('2');
@@ -31,13 +32,14 @@ describe('With existing line data', () => {
 
     it('should properly describe all lines of the network', async () => {
         const describedLines = await linesService.describeLines();
-        expect(Object.keys(describedLines)).toHaveLength(3);
+        expect(describedLines).toHaveLength(3);
 
         const line1 = describedLines[0];
         expect(line1.directions).toStrictEqual(['Train Station', 'Suburb']);
         expect(line1.routes).toHaveLength(2);
         expect(line1.routes[0].stops.map(stop => stop.name)).toStrictEqual(['Suburb', 'Gate', 'City', 'Old Town', 'Bank', 'Train Station']);
         expect(line1.routes[1].stops.map(stop => stop.name)).toStrictEqual(['Train Station', 'Bank', 'Old Town', 'City', 'Gate', 'Suburb']);
+        expect(line1.routes[0].stops[2].name).toBe('City');
         expect(line1.routes[0].stops[2].connections.map(c => c.line)).toStrictEqual(['2', '100']);
         expect(line1.routes.map(route => route.stops.filter(s => s.name !== 'City').map(s => s.connections).flat()).flat()).toHaveLength(0);
 
@@ -46,6 +48,7 @@ describe('With existing line data', () => {
         expect(line2.routes).toHaveLength(2);
         expect(line2.routes[0].stops.map(stop => stop.name)).toStrictEqual(['Airport', 'Court', 'Hospital', 'City', 'Residential', 'Bridge']);
         expect(line2.routes[1].stops.map(stop => stop.name)).toStrictEqual(['Bridge', 'Residential', 'City', 'Hospital', 'Court', 'Airport']);
+        expect(line2.routes[0].stops[3].name).toBe('City');
         expect(line2.routes[0].stops[3].connections.map(c => c.line)).toStrictEqual(['1', '100']);
         expect(line2.routes.map(route => route.stops.filter(s => s.name !== 'City').map(s => s.connections).flat()).flat()).toHaveLength(0);
 
@@ -54,8 +57,29 @@ describe('With existing line data', () => {
         expect(line3.routes).toHaveLength(2);
         expect(line3.routes[0].stops.map(stop => stop.name)).toStrictEqual(['Lake', 'City', 'University', 'Bus Terminal']);
         expect(line3.routes[1].stops.map(stop => stop.name)).toStrictEqual(['Bus Terminal', 'University', 'City', 'Lake']);
+        expect(line3.routes[0].stops[1].name).toBe('City');
         expect(line3.routes[0].stops[1].connections.map(c => c.line)).toStrictEqual(['1', '2']);
         expect(line3.routes.map(route => route.stops.filter(s => s.name !== 'City').map(s => s.connections).flat()).flat()).toHaveLength(0);
+    });
+    
+    it('should properly describe line 1', async() => {
+        const describedLine = await linesService.describeLine('1');
+        expect(describedLine).toBeInstanceOf(Object);
+        expect(describedLine.directions).toStrictEqual(['Suburb', 'Train Station']);
+        expect(describedLine.routes).toHaveLength(2);
+        expect(describedLine.routes[0].stops.map(stop => stop.name)).toStrictEqual(['Train Station', 'Bank', 'Old Town', 'City', 'Gate', 'Suburb']);
+        expect(describedLine.routes[1].stops.map(stop => stop.name)).toStrictEqual(['Suburb', 'Gate', 'City', 'Old Town', 'Bank', 'Train Station']);
+        expect(describedLine.routes[0].stops[3].name).toBe('City');
+        expect(describedLine.routes[0].stops[3].connections.map(c => c.line)).toStrictEqual(['2', '100']);
+        expect(describedLine.routes.map(route => route.stops.filter(s => s.name !== 'City').map(s => s.connections).flat()).flat()).toHaveLength(0);
+    });
+
+    it('should throw error since line A does not exist', async() => {
+        await expect(async () => await linesService.describeLine('A')).rejects.toThrow('Unable to find any of the following lines: A');
+    });
+
+    it('should throw error since lines B, C, and 999 do not exist', async() => {
+        await expect(async () => await linesService.describeLines(['B', 'C', '999'])).rejects.toThrow('Unable to find any of the following lines: B,C,999');
     });
 
     it('should return a route of [Hospital, City, Residential, Bridge]', async () => {

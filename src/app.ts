@@ -42,7 +42,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 app.use((err: Error | ValidationError, req: Request, res: Response, next: NextFunction) => {
-    if (!(err instanceof Error)) {
+    if ('errors' in err) {
         res.status(err.status || 500).json({
             message: err.message,
             errors: err.errors,
