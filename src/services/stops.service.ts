@@ -1,5 +1,5 @@
 import DataAccessService from './data.access.service';
-import { Connection, Stop } from '../models/stop';
+import { Stop } from '../models/stop';
 import { TransportType } from '../models/transport-type';
 
 export default class StopsService extends DataAccessService {
