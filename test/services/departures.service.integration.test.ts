@@ -37,7 +37,7 @@ describe('With existing departures', () => {
     });
 
     it('should return the 00:20 and 00:30 departures when requesting the next 2 departures from Station towards Ferry Terminal', async () => {
-        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T00:17:35.264+02:00'));
+        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T00:17:35.264'));
         const nextDepartures = await departuresService.getNextDepartures(1, '1', 'Ferry Terminal', 2);
         expect(nextDepartures.stop.name).toBe('Station');
         expect(Object.keys(nextDepartures.departures)).toStrictEqual(['1']);
