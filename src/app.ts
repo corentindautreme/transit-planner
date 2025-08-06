@@ -49,7 +49,7 @@ app.use((err: Error | ValidationError, req: Request, res: Response, next: NextFu
         });
     } else {
         console.error(err);
-        res.status(500).json({error: err.message});
+        res.status(500).json({error: 'An internal error occurred and your request could not be processed'});
     }
 });
 

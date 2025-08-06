@@ -2,6 +2,7 @@ import DataAccessService from './data.access.service';
 import { Departure, DepartureByLine, DeparturesAtStop } from '../models/departures';
 import { TransportType } from '../models/transport-type';
 import { Connection } from '../models/stop';
+import { DepartureNotFoundError } from '../models/error/departure-not-found';
 
 export default class DeparturesService extends DataAccessService {
     constructor() {
@@ -74,7 +75,19 @@ export default class DeparturesService extends DataAccessService {
                 },
                 direction: string,
             }[]
-        ).then(lineStops => lineStops.filter(lineStop => lineStop.direction != lineStop.stop.name) // discard departures from a stop that's a final stop
+        ).then(lineStops => {
+            if (lineStops.length == 0) {
+                let message = `Unable to find departures from stop with internal ID ${from}`;
+                if (line) {
+                    message += ` on line ${line}`;
+                }
+                if (direction) {
+                    message += ` in direction of ${direction}`;
+                }
+                throw new DepartureNotFoundError(message);
+            }
+            return lineStops;
+        }).then(lineStops => lineStops.filter(lineStop => lineStop.direction != lineStop.stop.name) // discard departures from a stop that's a final stop
         ).then(lineStops => {
             // extract the departures from all edges of all lines that are serving our stop
             const departuresByLine = lineStops

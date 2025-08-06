@@ -58,7 +58,7 @@ export default class LinesService extends DataAccessService {
             })[]
         ).then(lineStops => {
             if (lineStops.length == 0) {
-                throw new LineNotFoundError(`Unable to find line ${name} with direction ${direction}`)
+                throw new LineNotFoundError(`Unable to find line ${name} with direction ${direction}`);
             }
             return lineStops;
         }).then(lineStops => lineStops.map(ls => ({
@@ -134,7 +134,12 @@ export default class LinesService extends DataAccessService {
             line: { name: string, type: string },
             direction: string,
             stop: (Stop & { line_stop: { order: number, line: { name: string, type: string }, direction: string }[] })
-        }[]).then(lineStops => lineStops.reduce((lineStopsByLineAndDirection, lineStop) => {
+        }[]).then(lineStops => {
+            if (lineStops.length == 0) {
+                throw new LineNotFoundError(`Unable to find any of the following lines: ${names}`);
+            }
+            return lineStops;
+        }).then(lineStops => lineStops.reduce((lineStopsByLineAndDirection, lineStop) => {
             if (!Object.keys(lineStopsByLineAndDirection).includes(lineStop.line.name)) {
                 lineStopsByLineAndDirection[lineStop.line.name] = {type: lineStop.line.type, routes: {}};
             }
