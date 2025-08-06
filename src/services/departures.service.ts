@@ -2,6 +2,7 @@ import DataAccessService from './data.access.service';
 import { Departure, DepartureByLine, DeparturesAtStop } from '../models/departures';
 import { TransportType } from '../models/transport-type';
 import { Connection } from '../models/stop';
+import { DepartureNotFoundError } from '../models/error/departure-not-found';
 
 export default class DeparturesService extends DataAccessService {
     constructor() {
@@ -74,7 +75,19 @@ export default class DeparturesService extends DataAccessService {
                 },
                 direction: string,
             }[]
-        ).then(lineStops => lineStops.filter(lineStop => lineStop.direction != lineStop.stop.name) // discard departures from a stop that's a final stop
+        ).then(lineStops => {
+            if (lineStops.length == 0) {
+                let message = `Unable to find departures from stop with internal ID ${from}`;
+                if (line) {
+                    message += ` on line ${line}`;
+                }
+                if (direction) {
+                    message += ` in direction of ${direction}`;
+                }
+                throw new DepartureNotFoundError(message);
+            }
+            return lineStops;
+        }).then(lineStops => lineStops.filter(lineStop => lineStop.direction != lineStop.stop.name) // discard departures from a stop that's a final stop
         ).then(lineStops => {
             // extract the departures from all edges of all lines that are serving our stop
             const departuresByLine = lineStops
@@ -91,6 +104,9 @@ export default class DeparturesService extends DataAccessService {
                         // otherwise we end up inserting departures from Otoka for line 105 as departures for line 101
                         .filter(departure => departure.line.name === lineStop.line.name)
                         .forEach(departure => {
+                            // reset the date to make sure a date with time 00:29 CET (= 23:29 UTC) doesn't get
+                            // interpreted as a D+1 date
+                            departure.time_utc.setFullYear(1970, 0, 1);
                             if (!departuresByLine[lineStop.line.name].departures[departure.direction]) {
                                 departuresByLine[lineStop.line.name].departures[departure.direction] = [departure.time_utc];
                             } else {
@@ -105,10 +121,8 @@ export default class DeparturesService extends DataAccessService {
                     }
                 });
 
-            let getAfter;
-            if (!after) {
-                getAfter = new Date(0);
-            } else {
+            let getAfter: Date | undefined;
+            if (after) {
                 getAfter = new Date(after);
                 getAfter.setFullYear(1970, 0, 1);
             }
@@ -147,7 +161,7 @@ export default class DeparturesService extends DataAccessService {
                         const lineDepartures = Object.keys(departuresByLine).includes(r.line.name) ? departuresByLine[r.line.name].departures : {};
                         const times = (Object.keys(lineDepartures).includes(r.direction) ? lineDepartures[r.direction] : [])
                             .map(d => new Date(d.getTime() + delay * 60_000))
-                            .filter(d => d >= getAfter);
+                            .filter(d => !getAfter || d >= getAfter);
                         const departures = !limit ? times : times.slice(0, limit);
                         return {
                             line: r.line.name,

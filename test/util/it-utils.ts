@@ -78,18 +78,28 @@ export const createNetwork = async (
             console.log(`No delay or not enough/too many delays provided for line ${line.name} - will not insert any departure_delay for this line`);
             return [];
         } else {
+            // delays are provided as travel time between 2 consecutive stations => we need to accumulate them to
+            // insert them as delays from origin
+            const accumulatedDelaysRoute1 = line.delays.reduce((accumulated, delay, index) => {
+                accumulated.push(index === 0 ? delay : accumulated[index - 1] + delay);
+                return accumulated;
+            }, [] as number[]);
+            const accumulatedDelaysRoute2 = line.delays.toReversed().reduce((accumulated, delay, index) => {
+                accumulated.push(index === 0 ? delay : accumulated[index - 1] + delay);
+                return accumulated;
+            }, [] as number[]);
             return [
                 ...line.route.map((stop, index) => ({
                     id_line: lineToId[line.name],
                     id_stop: stopToId[stop],
                     direction: line.route[line.route.length - 1],
-                    delay: index === 0 ? 0 : line.delays![index - 1]
+                    delay: index === 0 ? 0 : accumulatedDelaysRoute1[index - 1]
                 })),
                 ...line.route.toReversed().map((stop, index) => ({
                     id_line: lineToId[line.name],
                     id_stop: stopToId[stop],
                     direction: line.route.toReversed()[line.route.length - 1],
-                    delay: index === 0 ? 0 : line.delays!.toReversed()[index - 1]
+                    delay: index === 0 ? 0 : accumulatedDelaysRoute2[index - 1]
                 }))
             ];
         }

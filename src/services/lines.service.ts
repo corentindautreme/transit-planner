@@ -58,7 +58,7 @@ export default class LinesService extends DataAccessService {
             })[]
         ).then(lineStops => {
             if (lineStops.length == 0) {
-                throw new LineNotFoundError(`Unable to find line ${name} with direction ${direction}`)
+                throw new LineNotFoundError(`Unable to find line ${name} with direction ${direction}`);
             }
             return lineStops;
         }).then(lineStops => lineStops.map(ls => ({
@@ -86,7 +86,7 @@ export default class LinesService extends DataAccessService {
                     .sort((c1, c2) => c1.type != c2.type ? c1.type.localeCompare(c2.type) : c1.line.localeCompare(c2.line))
             } as Stop))
         ).then(route => {
-            if (!!from) {
+            if (from) {
                 const indexOfFrom = route.findIndex((s: Stop) => s.id === from);
                 if (indexOfFrom > -1) {
                     return route.slice(indexOfFrom);
@@ -128,13 +128,18 @@ export default class LinesService extends DataAccessService {
                     }
                 },
             },
-            where: !!names ? {line: {name: {in: names}}} : undefined,
+            where: names ? {line: {name: {in: names}}} : undefined,
             orderBy: {order: 'asc'}
         }).then(lineStops => lineStops as {
             line: { name: string, type: string },
             direction: string,
             stop: (Stop & { line_stop: { order: number, line: { name: string, type: string }, direction: string }[] })
-        }[]).then(lineStops => lineStops.reduce((lineStopsByLineAndDirection, lineStop) => {
+        }[]).then(lineStops => {
+            if (lineStops.length == 0) {
+                throw new LineNotFoundError(`Unable to find any of the following lines: ${names}`);
+            }
+            return lineStops;
+        }).then(lineStops => lineStops.reduce((lineStopsByLineAndDirection, lineStop) => {
             if (!Object.keys(lineStopsByLineAndDirection).includes(lineStop.line.name)) {
                 lineStopsByLineAndDirection[lineStop.line.name] = {type: lineStop.line.type, routes: {}};
             }

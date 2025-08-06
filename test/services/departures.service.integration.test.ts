@@ -24,6 +24,7 @@ describe('With existing departures', () => {
             ]
         }]);
     });
+
     it('should return 5 departures from Airport to Station (at 00:X1) and Ferry Terminal (and 00:X6) each (Bosnian time)', async () => {
         const stops = await stopsService.getAllStops();
         const departures = await departuresService.getScheduledDepartures(stops.filter(s => s.name === 'Airport')[0].id!);
@@ -33,5 +34,16 @@ describe('With existing departures', () => {
         expect(departures.departures['1'].departures['Station']).toHaveLength(5);
         expect(departures.departures['1'].departures['Station'].map(d => new Date(d.scheduledAt).toLocaleString('bs-BA', {timeStyle: 'short'}))).toStrictEqual(['00:06', '00:16', '00:26', '00:36', '00:46']);
         expect(departures.departures['1'].departures['Ferry Terminal'].map(d => new Date(d.scheduledAt).toLocaleString('bs-BA', {timeStyle: 'short'}))).toStrictEqual(['00:01', '00:11', '00:21', '00:31', '00:41']);
-    })
+    });
+
+    it('should return the 00:20 and 00:30 departures when requesting the next 2 departures from Station towards Ferry Terminal', async () => {
+        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T00:17:35.264'));
+        const nextDepartures = await departuresService.getNextDepartures(1, '1', 'Ferry Terminal', 2);
+        expect(nextDepartures.stop.name).toBe('Station');
+        expect(Object.keys(nextDepartures.departures)).toStrictEqual(['1']);
+        expect(Object.keys(nextDepartures.departures['1'].departures)).toStrictEqual(['Ferry Terminal']);
+        expect(nextDepartures.departures['1'].departures['Ferry Terminal']).toHaveLength(2);
+        expect(nextDepartures.departures['1'].departures['Ferry Terminal'].map(d => new Date(d.scheduledAt).toLocaleString('bs-BA', {timeStyle: 'short'}))).toStrictEqual(['00:20', '00:30'])
+        jest.useRealTimers();
+    });
 })

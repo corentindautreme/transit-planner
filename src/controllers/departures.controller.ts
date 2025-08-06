@@ -3,6 +3,7 @@ import DeparturesService from '../services/departures.service';
 import { DeparturesAtStop } from '../models/departures';
 import { LineNotFoundError } from '../models/error/line-not-found';
 import { StopNotFound } from '../models/error/stop-not-found';
+import { DepartureNotFoundError } from '../models/error/departure-not-found';
 
 export default class DeparturesController {
     private readonly departuresService: DeparturesService;
@@ -24,15 +25,12 @@ export default class DeparturesController {
             .catch((err: Error) => {
                 let errorMessage: string;
                 let status: number;
-                if (err instanceof LineNotFoundError) {
+                if (err instanceof DepartureNotFoundError) {
                     status = 404;
-                    errorMessage = err.message;
-                } else if (err instanceof StopNotFound) {
-                    status = 400;
                     errorMessage = err.message;
                 } else {
                     status = 500;
-                    errorMessage = err.message;
+                    errorMessage = "An internal error occurred and your request could not be processed";
                 }
                 res.status(status).json({error: errorMessage});
             });
@@ -50,15 +48,12 @@ export default class DeparturesController {
             .catch((err: Error) => {
                 let errorMessage: string;
                 let status: number;
-                if (err instanceof LineNotFoundError) {
+                if (err instanceof DepartureNotFoundError) {
                     status = 404;
-                    errorMessage = err.message;
-                } else if (err instanceof StopNotFound) {
-                    status = 400;
                     errorMessage = err.message;
                 } else {
                     status = 500;
-                    errorMessage = err.message;
+                    errorMessage = "An internal error occurred and your request could not be processed";
                 }
                 res.status(status).json({error: errorMessage});
             });

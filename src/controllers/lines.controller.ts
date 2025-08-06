@@ -46,7 +46,16 @@ export default class LinesController {
         this.linesService.describeLine(name)
             .then(lines => res.status(200).json(lines))
             .catch((err: Error) => {
-                res.status(500).json({error: err.message});
+                let errorMessage: string;
+                let status: number;
+                if (err instanceof LineNotFoundError) {
+                    status = 404;
+                    errorMessage = err.message;
+                } else {
+                    status = 500;
+                    errorMessage = "An internal error occurred and your request could not be processed";
+                }
+                res.status(status).json({error: errorMessage});
             });
     }
 
