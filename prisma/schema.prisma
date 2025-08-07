@@ -20,7 +20,7 @@ model line {
 }
 
 model line_stop {
-  id        Int      @id(map: "line_stop_pk")
+  id        Int      @id(map: "line_stop_pk") @default(autoincrement())
   id_line   Int?
   id_stop   Int?
   direction String?  @db.VarChar
@@ -33,7 +33,7 @@ model line_stop {
 }
 
 model departure {
-  id        Int       @id(map: "departure_pk")
+  id        Int       @id(map: "departure_pk") @default(autoincrement())
   id_line   Int?
   id_stop   Int?
   direction String?   @db.VarChar
@@ -51,11 +51,18 @@ model stop {
 }
 
 model departure_delay {
-  id        Int     @id(map: "departure_delay_pk")
+  id        Int     @id(map: "departure_delay_pk") @default(autoincrement())
   id_line   Int?
   id_stop   Int?
   direction String? @db.VarChar
   delay     Int?
   line      line?   @relation(fields: [id_line], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_line")
   stop      stop?   @relation(fields: [id_stop], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stop")
+
+  @@unique([id_line, id_stop, direction], map: "unique_delay")
+}
+
+model whitelist {
+  id    Int    @id(map: "whitelist_pk") @default(autoincrement())
+  email String
 }
