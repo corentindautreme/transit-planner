@@ -9,6 +9,7 @@ import * as YAML from 'yaml';
 import * as fs from 'node:fs';
 import * as SwaggerUI from 'swagger-ui-express';
 import stopsRoute from './routes/stops.route';
+import { authenticatedUser } from './lib/auth/auth.middleware';
 
 const app = express();
 
@@ -27,9 +28,9 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // API Routes
-app.use('/lines', linesRoute);
-app.use('/departures', departuresRoute);
-app.use('/stops', stopsRoute);
+app.use('/lines', authenticatedUser, linesRoute);
+app.use('/departures', authenticatedUser, departuresRoute);
+app.use('/stops', authenticatedUser, stopsRoute);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
