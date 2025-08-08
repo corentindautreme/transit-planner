@@ -6,6 +6,7 @@
     "dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --exec \"ts-node src/server.ts\"",
     "build": "tsc",
     "start": "node dist/server.js",
+    "postinstall": "mkdir public/api-docs && cp node_modules/swagger-ui-dist/swagger-ui.css public/api-docs/swagger-ui.css && cp node_modules/swagger-ui-dist/swagger-ui-bundle.js public/api-docs/swagger-ui-bundle.js && cp node_modules/swagger-ui-dist/swagger-ui-standalone-preset.js public/api-docs/swagger-ui-standalone-preset.js && prisma generate",
     "lint": "eslint src/**/*.ts",
     "test": "echo \"Defaulting to running UT (testut)\" && jest --testPathIgnorePatterns=.*\\.integration.test.ts --setupFilesAfterEnv ./test/config/prisma.mock.ts",
     "testut": "jest --testPathIgnorePatterns=.*\\.integration.test.ts --setupFilesAfterEnv ./test/config/prisma.mock.ts",
@@ -26,6 +27,7 @@
     "jest-mock-extended": "^4.0.0",
     "logger": "^0.0.1",
     "swagger-ui-express": "^5.0.1",
+    "swagger-ui-dist": "^5.0.1",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "yaml": "^2.8.0"
