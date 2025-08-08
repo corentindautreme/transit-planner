@@ -5,8 +5,6 @@ info:
     A simple transit planner app based on fixed scheduled
 
     [View source on Github](https://github.com/corentindautreme/transit-planner)
-  contact:
-    email: to@do.com
   version: 0.0.1
 servers:
   - url: http://localhost:4000

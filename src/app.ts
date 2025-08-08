@@ -10,6 +10,7 @@ import * as fs from 'node:fs';
 import * as SwaggerUI from 'swagger-ui-express';
 import stopsRoute from './routes/stops.route';
 import { authenticatedUser } from './lib/auth/auth.middleware';
+import path from 'node:path';
 
 const app = express();
 
@@ -19,8 +20,13 @@ app.use(OpenApiValidator.middleware({
     ignoreUndocumented: true
 }));
 
-const swaggerDoc = YAML.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
-app.use('/api-docs', SwaggerUI.serve, SwaggerUI.setup(swaggerDoc));
+const swaggerDoc = YAML.parse(fs.readFileSync(path.resolve('./openapi.yaml'), 'utf8'));
+app.use('/api-docs', function (req: Request, res: Response, next: NextFunction) {
+    swaggerDoc.servers = process.env.ENVIRONMENT === 'local' ? [{url: 'http://localhost:4000'}] : [];
+    // @ts-ignore
+    req['swaggerDoc'] = swaggerDoc;
+    next();
+}, SwaggerUI.serveFiles(swaggerDoc, {}), SwaggerUI.setup());
 
 app.use(cors());
 app.use(helmet());
