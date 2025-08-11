@@ -15,6 +15,9 @@ tags:
     description: Departure times
   - name: stops
     description: Stop static data
+security:
+  - googleOAuth:
+      - https://www.googleapis.com/auth/userinfo.email
 paths:
   /lines:
     get:
@@ -226,6 +229,17 @@ paths:
                 items:
                   $ref: "#/components/schemas/Stop"
 components:
+  securitySchemes:
+    googleOAuth:
+      type: oauth2
+      description: Google OAuth 2.0 authentication
+      x-tokenName: id_token
+      flows:
+        authorizationCode:
+          authorizationUrl: https://accounts.google.com/o/oauth2/v2/auth
+          tokenUrl: https://www.googleapis.com/oauth2/v4/token
+          scopes:
+            https://www.googleapis.com/auth/userinfo.email: Read user's email address
   schemas:
     Line:
       type: object
