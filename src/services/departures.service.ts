@@ -177,7 +177,7 @@ export default class DeparturesService extends DataAccessService {
                                 departures: {} as { [direction: string]: Departure[] }
                             };
                         }
-                        departure.departures.forEach(d => d.setFullYear(now.getFullYear(), now.getMonth(), now.getDate()));
+                        departure.departures.forEach(d => d.setUTCFullYear(now.getFullYear(), now.getMonth(), now.getDate()));
                         out[departure.line].departures[departure.direction] = departure.departures
                             .map(d => ({'scheduledAt': d.toISOString()}));
                         return out;
