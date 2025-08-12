@@ -24,123 +24,132 @@ describe('Departures API tests', () => {
         }]);
     });
 
-    it('should return 200 and all 7 departures from Business on line A in both directions when requesting GET /departures/scheduled', async () => {
-        const response = await request(app).get('/departures/scheduled?from=3&line=A');
-        expect(response.status).toBe(200);
-        const nowDate = new Date().toLocaleDateString('se-SE');
-        expect(response.body).toEqual({
-            stop: {
-                id: 3,
-                name: 'Business',
-                connections: [
-                    {
-                        'directions': [
-                            'Airport',
-                            'Main Station'
-                        ],
-                        'line': 'A',
-                        'type': 'bus'
-                    }
-                ],
-            },
-            departures: {
-                A: {
-                    type: 'bus',
-                    departures: {
-                        Airport: [
-                            {
-                                scheduledAt: nowDate + 'T03:18:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T05:18:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T07:18:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T09:18:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T11:18:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T13:18:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T15:18:00.000Z'
-                            }
-                        ],
-                        'Main Station': [
-                            {
-                                scheduledAt: nowDate + 'T03:40:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T05:40:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T07:40:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T09:40:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T11:40:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T13:40:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate + 'T15:40:00.000Z'
-                            }
-                        ]
+    it('should return 200 and all 7 departures from Business on line A in both directions when requesting GET /departures/scheduled in winter time', async () => {        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T17:30:00.264+02:00'));
+        try {
+            jest.useFakeTimers().setSystemTime(new Date('2025-01-13T00:00:00.000+01:00'));
+            const response = await request(app).get('/departures/scheduled?from=3&line=A');
+            expect(response.status).toBe(200);
+            const nowDate = new Date().toLocaleDateString('se-SE');
+            expect(response.body).toEqual({
+                stop: {
+                    id: 3,
+                    name: 'Business',
+                    connections: [
+                        {
+                            'directions': [
+                                'Airport',
+                                'Main Station'
+                            ],
+                            'line': 'A',
+                            'type': 'bus'
+                        }
+                    ],
+                },
+                departures: {
+                    A: {
+                        type: 'bus',
+                        departures: {
+                            Airport: [
+                                {
+                                    scheduledAt: nowDate + 'T04:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T06:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T08:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T10:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T12:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T14:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T16:18:00.000Z'
+                                }
+                            ],
+                            'Main Station': [
+                                {
+                                    scheduledAt: nowDate + 'T04:40:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T06:40:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T08:40:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T10:40:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T12:40:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T14:40:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate + 'T16:40:00.000Z'
+                                }
+                            ]
+                        }
                     }
                 }
-            }
-        });
+            });
+        } finally {
+            jest.useRealTimers();
+        }
     });
 
-    it('should return 200 and 4 departures from Center on line A towards Main Station after 10:00 when requesting GET /departures/scheduled', async () => {
-        const nowDate = new Date();
-        nowDate.setHours(10);
-        const response = await request(app).get(`/departures/scheduled?from=2&line=A&direction=Main%20Station&after=${nowDate.toISOString().replaceAll(':', '%3A')}`);
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            stop: {
-                id: 2,
-                name: 'Center',
-                connections: [
-                    {
-                        'directions': [
-                            'Airport',
-                            'Main Station'
-                        ],
-                        'line': 'A',
-                        'type': 'bus'
-                    }
-                ]
-            },
-            departures: {
-                A: {
-                    type: 'bus',
-                    departures: {
-                        'Main Station': [
-                            {
-                                scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T09:42:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T11:42:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T13:42:00.000Z'
-                            },
-                            {
-                                scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T15:42:00.000Z'
-                            }
-                        ]
+    it('should return 200 and 4 departures from Center on line A towards Main Station after 10:00 when requesting GET /departures/scheduled in summer time', async () => {
+        try {
+            jest.useFakeTimers().setSystemTime(new Date('2025-06-13T10:00:00.000+02:00'));
+            const nowDate = new Date('2025-06-13T10:00:00.000+02:00');
+            const response = await request(app).get(`/departures/scheduled?from=2&line=A&direction=Main%20Station&after=${nowDate.toISOString().replaceAll(':', '%3A')}`);
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({
+                stop: {
+                    id: 2,
+                    name: 'Center',
+                    connections: [
+                        {
+                            'directions': [
+                                'Airport',
+                                'Main Station'
+                            ],
+                            'line': 'A',
+                            'type': 'bus'
+                        }
+                    ]
+                },
+                departures: {
+                    A: {
+                        type: 'bus',
+                        departures: {
+                            'Main Station': [
+                                {
+                                    scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T09:42:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T11:42:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T13:42:00.000Z'
+                                },
+                                {
+                                    scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T15:42:00.000Z'
+                                }
+                            ]
+                        }
                     }
                 }
-            }
-        });
+            });
+        } finally {
+            jest.useRealTimers();
+        }
     });
 
     it('should return 404 when requesting GET /departures/scheduled for a non-existent stop', async () => {
@@ -167,76 +176,98 @@ describe('Departures API tests', () => {
         expect(response.body).toEqual({error: 'Unable to find departures from stop with internal ID 1 on line 2 in direction of Bus Station'});
     });
 
-    it('should return 200 and the next 3 departures from Pleasant Suburb towards Main Station when requesting GET /departures/next at 08:24:45.267', async () => {
-        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T08:24:45.267'));
-        const response = await request(app).get('/departures/next?from=4&direction=Main%20Station&limit=3');
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            stop: {
-                id: 4,
-                name: 'Pleasant Suburb',
-                connections: [
-                    {
-                        'directions': [
-                            'Airport',
-                            'Main Station'
-                        ],
-                        'line': 'A',
-                        'type': 'bus'
-                    }
-                ]
-            },
-            departures: {
-                A: {
-                    type: 'bus',
-                    departures: {
-                        'Main Station': [
-                            {
-                                scheduledAt: '2025-06-13T07:37:00.000Z'
-                            },
-                            {
-                                scheduledAt: '2025-06-13T09:37:00.000Z'
-                            },
-                            {
-                                scheduledAt: '2025-06-13T11:37:00.000Z'
-                            }
-                        ]
+    it('should return 200 and the next 3 departures from Pleasant Suburb towards Main Station when requesting GET /departures/next at 08:24:45.267 winter time', async () => {
+        try {
+            jest.useFakeTimers().setSystemTime(new Date('2025-12-08T08:24:45.267+01:00'));
+            const response = await request(app).get('/departures/next?from=4&direction=Main%20Station&limit=3');
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({
+                stop: {
+                    id: 4,
+                    name: 'Pleasant Suburb',
+                    connections: [
+                        {
+                            'directions': [
+                                'Airport',
+                                'Main Station'
+                            ],
+                            'line': 'A',
+                            'type': 'bus'
+                        }
+                    ]
+                },
+                departures: {
+                    A: {
+                        type: 'bus',
+                        departures: {
+                            'Main Station': [
+                                {
+                                    scheduledAt: '2025-12-08T08:37:00.000Z'
+                                },
+                                {
+                                    scheduledAt: '2025-12-08T10:37:00.000Z'
+                                },
+                                {
+                                    scheduledAt: '2025-12-08T12:37:00.000Z'
+                                }
+                            ]
+                        }
                     }
                 }
-            }
-        })
-        jest.useRealTimers();
+            });
+        } finally {
+            jest.useRealTimers();
+        }
     });
 
-    it('should return 200 and an empty departure list from Business towards Airport when requesting GET /departures/next at 20:40:07.967', async () => {
-        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T20:40:07.967'));
-        const response = await request(app).get('/departures/next?from=3&direction=Airport');
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({
-            stop: {
-                id: 3,
-                name: 'Business',
-                connections: [
-                    {
-                        'directions': [
-                            'Airport',
-                            'Main Station'
-                        ],
-                        'line': 'A',
-                        'type': 'bus'
-                    }
-                ]
-            },
-            departures: {
-                A: {
-                    type: 'bus',
-                    departures: {
-                        'Airport': []
+    it('should return 200 and the next 5 departures for the next day from Business towards Airport when requesting GET /departures/next at 20:40:07.967 summer time', async () => {
+        try {
+            jest.useFakeTimers().setSystemTime(new Date('2025-06-13T20:40:07.967+02:00'));
+            const response = await request(app).get('/departures/next?from=3&direction=Airport');
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual({
+                stop: {
+                    id: 3,
+                    name: 'Business',
+                    connections: [
+                        {
+                            'directions': [
+                                'Airport',
+                                'Main Station'
+                            ],
+                            'line': 'A',
+                            'type': 'bus'
+                        }
+                    ]
+                },
+                departures: {
+                    A: {
+                        type: 'bus',
+                        departures: {
+                            'Airport': [
+                                {
+                                    scheduledAt: '2025-06-14T03:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: '2025-06-14T05:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: '2025-06-14T07:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: '2025-06-14T09:18:00.000Z'
+                                },
+                                {
+                                    scheduledAt: '2025-06-14T11:18:00.000Z'
+                                }
+                            ]
+                        }
                     }
                 }
-            }
-        })
-        jest.useRealTimers();
+            });
+        } finally {
+            jest.useRealTimers();
+        }
     });
 
     it('should return 404 when requesting GET /departures/next for a non-existent stop', async () => {
