@@ -3,6 +3,7 @@ import { Departure, DepartureByLine, DeparturesAtStop } from '../models/departur
 import { TransportType } from '../models/transport-type';
 import { Connection } from '../models/stop';
 import { DepartureNotFoundError } from '../models/error/departure-not-found';
+import { applyOffset } from '../util/time-utils';
 
 export default class DeparturesService extends DataAccessService {
     constructor() {
@@ -125,6 +126,8 @@ export default class DeparturesService extends DataAccessService {
             if (after) {
                 getAfter = new Date(after);
                 getAfter.setFullYear(1970, 0, 1);
+                getAfter.setSeconds(0, 0);
+                // no need to further adjust the time - 1970-01-01 wasn't summer time
             }
 
             // apply the delay to the edges' departure times and return the result as a DepartureByLine (line name ->
@@ -160,9 +163,33 @@ export default class DeparturesService extends DataAccessService {
                         const delay: number = r.stop.departure_delay.filter(delay => delay.line.name == r.line.name && delay.direction == r.direction)[0]?.delay || 0;
                         const lineDepartures = Object.keys(departuresByLine).includes(r.line.name) ? departuresByLine[r.line.name].departures : {};
                         const times = (Object.keys(lineDepartures).includes(r.direction) ? lineDepartures[r.direction] : [])
-                            .map(d => new Date(d.getTime() + delay * 60_000))
-                            .filter(d => !getAfter || d >= getAfter);
-                        const departures = !limit ? times : times.slice(0, limit);
+                            .map(d => new Date(d.getTime() + delay * 60_000));
+
+                        // apply an offset to the returned departure times when the current timezone of the transit's
+                        // network does not match the timezone in which the schedules were entered (e.g. DST)
+                        let departures = applyOffset(times);
+
+                        if (getAfter) {
+                            departures = departures.filter(d => d >= getAfter);
+                        }
+                        if (limit) {
+                            departures = departures.slice(0, limit);
+                        }
+                        // set today's date on the departures (otherwise they'd be returned as departures for Jan 1 1970)
+                        departures.forEach(d => d.setUTCFullYear(now.getFullYear(), now.getMonth(), now.getDate()));
+
+                        // if the caller asked for a number of departures but there are fewer departures left for the
+                        // day, complete with the first departures of the next day (= the first departures of the day's
+                        // schedule, but set with tomorrow's date)
+                        if (getAfter && limit && departures.length < limit) {
+                            const additionalDepartures = times.slice(0, limit - departures.length);
+                            additionalDepartures.forEach(d => {
+                                d.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+                                d.setTime(d.getTime() + 24 * 60 * 60 * 1000)
+                            });
+                            departures = [...departures, ...additionalDepartures];
+                        }
+
                         return {
                             line: r.line.name,
                             type: r.line.type,
@@ -177,7 +204,6 @@ export default class DeparturesService extends DataAccessService {
                                 departures: {} as { [direction: string]: Departure[] }
                             };
                         }
-                        departure.departures.forEach(d => d.setUTCFullYear(now.getFullYear(), now.getMonth(), now.getDate()));
                         out[departure.line].departures[departure.direction] = departure.departures
                             .map(d => ({'scheduledAt': d.toISOString()}));
                         return out;
@@ -191,7 +217,6 @@ export default class DeparturesService extends DataAccessService {
 
     async getNextDepartures(from: number, line?: string, direction?: string, limit?: number): Promise<DeparturesAtStop> {
         const after = new Date();
-        after.setSeconds(0, 0);
         return this.getScheduledDepartures(from, line, direction, after, limit || 5);
     }
 }

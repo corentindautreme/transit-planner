@@ -296,7 +296,7 @@ components:
       properties:
         scheduledAt:
           type: string
-          description: The scheduled time of departure
+          description: The scheduled time of departure as a UTC ISO 8601 datetime. This datetime accounts for the DST status of the transit network's timezone (meaning an 08:00 AM departure in Sarajevo (CET, DST observed) will be returned as 07:00:00.000Z in winter, but as 06:00:00.000Z during DST).
           format: date-time
           example: '2025-01-01T07:00:00.000Z'
     DeparturesAtStop:
