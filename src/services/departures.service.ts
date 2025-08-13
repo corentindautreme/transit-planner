@@ -122,17 +122,16 @@ export default class DeparturesService extends DataAccessService {
                     }
                 });
 
+            const now = new Date();
+
             let getAfter: Date | undefined;
             if (after) {
-                getAfter = new Date(after);
-                getAfter.setFullYear(1970, 0, 1);
-                getAfter.setSeconds(0, 0);
-                // no need to further adjust the time - 1970-01-01 wasn't summer time
+                const afterDate = new Date(after);
+                getAfter = new Date(`1970-01-01 ${afterDate.toISOString().slice(11)}`);
             }
 
             // apply the delay to the edges' departure times and return the result as a DepartureByLine (line name ->
             // direction -> datetimes)
-            const now = new Date();
             const lineStopOccurrences = lineStops.filter(d => d.stop.id === from);
             return {
                 stop: {
@@ -162,39 +161,39 @@ export default class DeparturesService extends DataAccessService {
                     .map(r => {
                         const delay: number = r.stop.departure_delay.filter(delay => delay.line.name == r.line.name && delay.direction == r.direction)[0]?.delay || 0;
                         const lineDepartures = Object.keys(departuresByLine).includes(r.line.name) ? departuresByLine[r.line.name].departures : {};
-                        const times = (Object.keys(lineDepartures).includes(r.direction) ? lineDepartures[r.direction] : [])
-                            .map(d => new Date(d.getTime() + delay * 60_000));
 
                         // apply an offset to the returned departure times when the current timezone of the transit's
                         // network does not match the timezone in which the schedules were entered (e.g. DST)
-                        let departures = applyOffset(times);
+                        const times = applyOffset((Object.keys(lineDepartures).includes(r.direction) ? lineDepartures[r.direction] : [])
+                            // reset the date to 1970-01-01 (so that 00:XX departures that are saved as 1969-12-31 don't get lost)
+                            .map(d => new Date(d.setUTCFullYear(1970, 0, 1) + delay * 60_000)));
 
-                        if (getAfter) {
-                            departures = departures.filter(d => d >= getAfter);
-                        }
-                        if (limit) {
-                            departures = departures.slice(0, limit);
-                        }
-                        // set today's date on the departures (otherwise they'd be returned as departures for Jan 1 1970)
-                        departures.forEach(d => d.setUTCFullYear(now.getFullYear(), now.getMonth(), now.getDate()));
+                        let departures = times
+                            .filter(t => !getAfter || t >= getAfter)
+                            .slice(0, limit);
 
                         // if the caller asked for a number of departures but there are fewer departures left for the
                         // day, complete with the first departures of the next day (= the first departures of the day's
                         // schedule, but set with tomorrow's date)
+                        let additionalDepartures: Date[] = [];
                         if (getAfter && limit && departures.length < limit) {
-                            const additionalDepartures = times.slice(0, limit - departures.length);
-                            additionalDepartures.forEach(d => {
-                                d.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
-                                d.setTime(d.getTime() + 24 * 60 * 60 * 1000)
-                            });
-                            departures = [...departures, ...additionalDepartures];
+                            additionalDepartures = times.slice(0, limit - departures.length);
                         }
+
+                        const today = new Date(after || now);
+                        const todayISODateString = today.toISOString().slice(0, 10);
+                        const tomorrowISODateString = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+                        const returnedDepartures = [
+                            ...departures.map(d => todayISODateString + d.toISOString().slice(10)),
+                            ...additionalDepartures.map(d => tomorrowISODateString + d.toISOString().slice(10)),
+                        ];
 
                         return {
                             line: r.line.name,
                             type: r.line.type,
                             direction: r.direction,
-                            departures: departures
+                            departures: returnedDepartures
                         };
                     })
                     .reduce((out, departure) => {
@@ -205,7 +204,7 @@ export default class DeparturesService extends DataAccessService {
                             };
                         }
                         out[departure.line].departures[departure.direction] = departure.departures
-                            .map(d => ({'scheduledAt': d.toISOString()}));
+                            .map(d => ({'scheduledAt': d}));
                         return out;
                     }, {} as DepartureByLine)
             } as DeparturesAtStop;

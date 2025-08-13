@@ -5,28 +5,28 @@ import { createNetwork } from './util/it-utils';
 describe('Departures API tests', () => {
     beforeEach(async () => {
         // Line A: Main Station <-(1 min)-> Center <-(2 min)-> Business <-(3 min)-> Pleasant Suburb <-(7 min)-> Airport
-        //         deps: 05:15                                                                              deps: 05:30
-        //               07:15                                                                                    07:30
-        //               09:15                                                                                    09:30
-        //               11:15                                                                                    11:30
-        //               13:15                                                                                    13:30
-        //               15:15                                                                                    15:30
-        //               17:15                                                                                    17:30
+        //         deps: 05:15 CET                                                                       deps: 05:30 CET
+        //               07:15                                                                                 07:30
+        //               09:15                                                                                 09:30
+        //               11:15                                                                                 11:30
+        //               13:15                                                                                 13:30
+        //               15:15                                                                                 15:30
+        //               17:15                                                                                 17:30
         await createNetwork([{
             name: 'A',
             type: 'bus',
             route: ['Main Station', 'Center', 'Business', 'Pleasant Suburb', 'Airport'],
             delays: [1, 2, 3, 7],
             departures: [
-                ['1969-12-31T04:15:00.000Z', '1969-12-31T06:15:00.000Z', '1969-12-31T08:15:00.000Z', '1969-12-31T10:15:00.000Z', '1969-12-31T12:15:00.000Z', '1969-12-31T14:15:00.000Z', '1969-12-31T16:15:00.000Z'],
-                ['1969-12-31T04:30:00.000Z', '1969-12-31T06:30:00.000Z', '1969-12-31T08:30:00.000Z', '1969-12-31T10:30:00.000Z', '1969-12-31T12:30:00.000Z', '1969-12-31T14:30:00.000Z', '1969-12-31T16:30:00.000Z'],
+                ['1970-01-01T04:15:00.000Z', '1970-01-01T06:15:00.000Z', '1970-01-01T08:15:00.000Z', '1970-01-01T10:15:00.000Z', '1970-01-01T12:15:00.000Z', '1970-01-01T14:15:00.000Z', '1970-01-01T16:15:00.000Z'],
+                ['1970-01-01T04:30:00.000Z', '1970-01-01T06:30:00.000Z', '1970-01-01T08:30:00.000Z', '1970-01-01T10:30:00.000Z', '1970-01-01T12:30:00.000Z', '1970-01-01T14:30:00.000Z', '1970-01-01T16:30:00.000Z'],
             ]
         }]);
     });
 
     it('should return 200 and all 7 departures from Business on line A in both directions when requesting GET /departures/scheduled in winter time', async () => {        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T17:30:00.264+02:00'));
         try {
-            jest.useFakeTimers().setSystemTime(new Date('2025-01-13T00:00:00.000+01:00'));
+            jest.useFakeTimers().setSystemTime(new Date('2025-01-13T01:00:00.000+01:00'));
             const response = await request(app).get('/departures/scheduled?from=3&line=A');
             expect(response.status).toBe(200);
             const nowDate = new Date().toLocaleDateString('se-SE');
@@ -131,16 +131,16 @@ describe('Departures API tests', () => {
                         departures: {
                             'Main Station': [
                                 {
-                                    scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T09:42:00.000Z'
+                                    scheduledAt: nowDate.toLocaleDateString('sv-SE') + 'T09:42:00.000Z'
                                 },
                                 {
-                                    scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T11:42:00.000Z'
+                                    scheduledAt: nowDate.toLocaleDateString('sv-SE') + 'T11:42:00.000Z'
                                 },
                                 {
-                                    scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T13:42:00.000Z'
+                                    scheduledAt: nowDate.toLocaleDateString('sv-SE') + 'T13:42:00.000Z'
                                 },
                                 {
-                                    scheduledAt: nowDate.toLocaleDateString('se-SE') + 'T15:42:00.000Z'
+                                    scheduledAt: nowDate.toLocaleDateString('sv-SE') + 'T15:42:00.000Z'
                                 }
                             ]
                         }
