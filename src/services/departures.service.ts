@@ -181,12 +181,12 @@ export default class DeparturesService extends DataAccessService {
                         }
 
                         const today = new Date(after || now);
-                        const todayISODateString = today.toISOString().slice(0, 10);
+                        const todayISODateString = (after ? today.toISOString() : today.toLocaleDateString('sv-SE', {timeZone: process.env.NETWORK_TZ})).slice(0, 10);
                         const tomorrowISODateString = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
                         const returnedDepartures = [
                             ...departures.map(d => todayISODateString + d.toISOString().slice(10)),
-                            ...additionalDepartures.map(d => tomorrowISODateString + d.toISOString().slice(10)),
+                            ...additionalDepartures.map(d => tomorrowISODateString + d.toISOString().slice(10))
                         ];
 
                         return {

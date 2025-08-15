@@ -2,15 +2,13 @@ openapi: 3.0.4
 info:
   title: Transit Planner
   description: |-
-    A simple transit planner app based on fixed scheduled
+    A simple public transport app based on line data and fixed schedules
 
     [View source on Github](https://github.com/corentindautreme/transit-planner)
   version: 0.0.1
-servers:
-  - url: http://localhost:4000
 tags:
   - name: lines
-    description: Line static data (line code, stops...)
+    description: Line static data (type, stops...)
   - name: departures
     description: Departure times
   - name: stops
@@ -37,7 +35,7 @@ paths:
       tags:
         - lines
       summary: Describe line
-      description: Get the details of a line as well as all of its routes, returned as a list of stops and their associated connections grouped by line and direction, given the line's `name`
+      description: Get the details of a line as well as all of its routes, returned as a list of stops (including their associated connections) for each route, given the line's `name`
       operationId: describeLine
       parameters:
         - name: name
@@ -57,13 +55,13 @@ paths:
         '400':
           description: Invalid direction for the provided line
         '404':
-          description: Stop is not on the provided line
+          description: Could not find the provided line
   /lines/describe-route:
     get:
       tags:
         - lines
       summary: Describe line route
-      description: Get the route followed by a line as a list of stops and their associated connections, given the line's `name`, and the `direction` of the line
+      description: Get the route followed by a line as a list of stops (including their associated connections), given the line's `name` and the `direction` of the line
       operationId: describeLineRoute
       parameters:
         - name: name
@@ -104,7 +102,7 @@ paths:
       tags:
         - lines
       summary: Describe the routes of each line
-      description: Get the details and routes, returned as a list of stops and their associated connections grouped by line and direction, followed by each line of the system
+      description: Get the details and routes, returned as a list of stops (including their associated connections) for each route, followed by each line of the system
       operationId: describeAllLines
       responses:
         '200':
@@ -154,7 +152,7 @@ paths:
             format: date-time
         - name: limit
           in: query
-          description: Limit the number of departures to be returned for all directions. Returns all scheduled departures (or all departures scheduled after the time set in `after`) for the day if not provided
+          description: Limit the number of departures to be returned for each directions. Returns all scheduled departures (or all departures scheduled after the time set in `after`) for the day if not provided
           example: 5
           required: false
           schema:
@@ -166,12 +164,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeparturesAtStop'
+        '404':
+          description: The stop, line, and/or direction could not be found, or no data could be found for the provided combination
   /departures/next:
     get:
       tags:
         - departures
       summary: Get next departures
-      description: Get the next immediate departures for all lines for a given stop, grouped by line and direction
+      description: Get the next departures (as of the date of request) for all lines for a given stop, grouped by line and direction
       operationId: getNextDepartures
       parameters:
         - name: from
@@ -209,12 +209,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeparturesAtStop'
+        '404':
+          description: The stop, line, and/or direction could not be found, or no data could be found for the provided combination
   /stops:
     get:
       tags:
         - stops
       summary: List all stops
-      description: List all stops on the network with the lines that serve it (as a list of connections)
+      description: List details about all stops on the network, including the lines that serve it (as a list of connections)
       operationId: getAllStops
       responses:
         '200':

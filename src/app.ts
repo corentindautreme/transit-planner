@@ -22,7 +22,6 @@ app.use(OpenApiValidator.middleware({
 
 const swaggerDoc = YAML.parse(fs.readFileSync(path.resolve('./openapi.yaml'), 'utf8'));
 app.use('/api-docs', function (req: Request, res: Response, next: NextFunction) {
-    swaggerDoc.servers = process.env.ENVIRONMENT === 'local' ? [{url: 'http://localhost:4000'}] : [];
     // @ts-ignore
     req['swaggerDoc'] = swaggerDoc;
     next();
