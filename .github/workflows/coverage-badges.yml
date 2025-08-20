@@ -1,0 +1,44 @@
+name: Generate Coverage Badges On Merge To Main
+on:
+  push:
+    branches:
+      - main
+jobs:
+  generate-coverage-badges:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - name: Pnpm install
+        run: |
+          pnpm install
+      - name: Run coverage
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NETWORK_TZ: ${{ vars.NETWORK_TZ }}
+          SCHEDULES_OFFSET: ${{ vars.SCHEDULES_OFFSET }}
+        run: |
+          pnpm test
+      - name: Extract coverage data
+        run: |
+          echo "COVERAGE=$(jq -c .total coverage/summary/coverage-summary.json)" >> $GITHUB_ENV
+      - name: Checkout 'badges'
+        uses: actions/checkout@v4
+        with:
+          ref: badges
+      - name: Generate badges
+        run: |
+          cp -r _templates/coverage/. coverage/
+          cd coverage/
+          sed -i -e "s/__VAL__/$(echo $COVERAGE | jq .lines.pct)%/g" global.svg
+          sed -i -e "s/__VAL__/$(echo $COVERAGE | jq .lines.pct)%/g" line.svg
+          sed -i -e "s/__VAL__/$(echo $COVERAGE | jq .branches.pct)%/g" branch.svg
+      - name: Commit and Push
+        run: |
+          git config --global user.email "noreply@github.io"
+          git config --global user.name "GitHub Actions"
+          git add *.svg
+          git commit -m "Coverage badges"
+          git push
