@@ -29,7 +29,7 @@ describe('Departures API tests', () => {
             jest.useFakeTimers().setSystemTime(new Date('2025-01-13T00:00:00.000+01:00'));
             const response = await request(app).get('/departures/scheduled?from=3&line=A');
             expect(response.status).toBe(200);
-            const nowDate = new Date().toLocaleDateString('sv-SE');
+            const nowDate = new Date().toLocaleDateString('sv-SE', {timeZone: process.env.NETWORK_TZ});
             expect(response.body).toEqual({
                 stop: {
                     id: 3,
