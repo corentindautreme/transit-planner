@@ -12,7 +12,7 @@ export default class StopsController {
         this.stopsService.getAllStops()
             .then(stops => res.status(200).json(stops))
             .catch((err: Error) => {
-                res.status(500).json({error: err.message});
+                res.status(500).json({error: "An internal error occurred and your request could not be processed"});
             });
     }
 }

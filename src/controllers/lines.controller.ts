@@ -15,7 +15,7 @@ export default class LinesController {
         this.linesService.getAllLines()
             .then(lines => res.status(200).json(lines))
             .catch((err: Error) => {
-                res.status(500).json({error: err.message});
+                res.status(500).json({error: "An internal error occurred and your request could not be processed"});
             });
     }
 
@@ -35,7 +35,7 @@ export default class LinesController {
                     errorMessage = err.message;
                 } else {
                     status = 500;
-                    errorMessage = err.message;
+                    errorMessage = "An internal error occurred and your request could not be processed";
                 }
                 res.status(status).json({error: errorMessage});
             });
@@ -63,7 +63,7 @@ export default class LinesController {
         this.linesService.describeLines()
             .then(lines => res.status(200).json(lines))
             .catch((err: Error) => {
-                res.status(500).json({error: err.message});
+                res.status(500).json({error: "An internal error occurred and your request could not be processed"});
             });
     }
 }

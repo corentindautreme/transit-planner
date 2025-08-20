@@ -9,7 +9,7 @@
     "postinstall": "mkdir public/api-docs && cp node_modules/swagger-ui-dist/swagger-ui.css public/api-docs/swagger-ui.css && cp node_modules/swagger-ui-dist/swagger-ui-bundle.js public/api-docs/swagger-ui-bundle.js && cp node_modules/swagger-ui-dist/swagger-ui-standalone-preset.js public/api-docs/swagger-ui-standalone-preset.js && prisma generate",
     "lint": "eslint src/**/*.ts",
     "test": "pnpm run testut && pnpm run testit && pnpm run coverage",
-    "testut": "jest --testPathIgnorePatterns=.*\\.integration.test.ts --setupFilesAfterEnv ./test/config/prisma.mock.ts --coverageDirectory=./coverage/unit/ && cp ./coverage/unit/coverage-final.json ./coverage/coverage-final-unit.json",
+    "testut": "jest --testPathIgnorePatterns=.*\\.integration.test.ts --setupFilesAfterEnv ./test/config/prisma.mock.ts ./test/config/auth.mock.ts --coverageDirectory=./coverage/unit/ && cp ./coverage/unit/coverage-final.json ./coverage/coverage-final-unit.json",
     "testit": "jest .*.integration.test.ts --setupFilesAfterEnv ./test/config/it-mocks.ts --coverageDirectory=./coverage/integration/ && cp ./coverage/integration/coverage-final.json ./coverage/coverage-final-integration.json",
     "coverage": "nyc report --reporter json-summary --reporter text --reporter html -t coverage --report-dir coverage/summary"
   },
