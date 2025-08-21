@@ -49,6 +49,10 @@ export default class StopsService extends DataAccessService {
                 }
                 return stops;
             }, [] as Stop[]
-        )).then(lineStops => lineStops as Stop[]);
+        )).then(lineStops => lineStops as Stop[]
+        ).catch((err: Error) => {
+            console.error(err);
+            throw err;
+        });
     }
 }
