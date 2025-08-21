@@ -127,6 +127,7 @@ export default class DeparturesService extends DataAccessService {
             let getAfter: Date | undefined;
             if (after) {
                 const afterDate = new Date(after);
+                afterDate.setSeconds(0, 0);
                 getAfter = new Date(`1970-01-01 ${afterDate.toISOString().slice(11)}`);
             }
 
