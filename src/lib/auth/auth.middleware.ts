@@ -23,7 +23,7 @@ async function verifyGoogleToken(token: string) {
             idToken: token,
             audience: AUTH_GOOGLE_CLIENT_ID,
         });
-        if (ticket.getPayload()?.email && await isUserWhitelisted(ticket.getPayload()?.email)) {
+        if (await isUserWhitelisted(ticket.getPayload()?.email)) {
             return ticket.getPayload();
         }
         return null;
@@ -38,7 +38,10 @@ export async function authenticatedUser(req: Request, res: Response, next: NextF
         const payload = await verifyGoogleToken(req.headers.authorization.slice(7));
         if (payload) {
             return next();
+        } else {
+            res.status(403).json({error: 'Unauthorized'});
         }
+    } else {
+        res.status(401).json({error: 'Unauthenticated'});
     }
-    res.status(401).json({error: 'Not Authenticated'});
 }
