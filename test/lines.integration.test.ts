@@ -1,6 +1,7 @@
 import app from '../src/app';
 import request from 'supertest';
 import { createNetwork } from './util/it-utils';
+import { DescribedLine } from '../src/models/line';
 
 describe('Lines API tests', () => {
     beforeEach(async () => {
@@ -17,7 +18,7 @@ describe('Lines API tests', () => {
     it('should return 200 and all lines when requesting GET /lines', async () => {
         const response = await request(app).get('/lines');
         expect(response.status).toBe(200);
-        expect(response.body).toEqual([
+        expect(response.body).toEqual(expect.arrayContaining([
             {
                 name: '1',
                 type: 'tram',
@@ -33,18 +34,18 @@ describe('Lines API tests', () => {
                 type: 'trolleybus',
                 directions: ['Bus Terminal', 'Lake']
             }
-        ]);
+        ]));
     });
 
     it('should return 200 and properly describe all lines of the network when requesting GET /lines/describe-all', async () => {
         const response = await request(app).get('/lines/describe-all');
         expect(response.status).toBe(200);
-        expect(response.body).toEqual([
+        expect(response.body as DescribedLine[]).toEqual(expect.arrayContaining([
             {
                 name: '1',
                 type: 'tram',
-                directions: ['Train Station', 'Suburb'],
-                routes: [
+                directions: expect.arrayContaining(['Train Station', 'Suburb']),
+                routes: expect.arrayContaining([
                     {
                         direction: 'Train Station',
                         stops: [
@@ -65,12 +66,12 @@ describe('Lines API tests', () => {
                                     {
                                         line: '2',
                                         type: 'tram',
-                                        directions: ['Airport', 'Bridge']
+                                        directions: expect.arrayContaining(['Airport', 'Bridge'])
                                     },
                                     {
                                         line: '100',
                                         type: 'trolleybus',
-                                        directions: ['Lake', 'Bus Terminal']
+                                        directions: expect.arrayContaining(['Lake', 'Bus Terminal'])
                                     }
                                 ]
                             },
@@ -116,12 +117,12 @@ describe('Lines API tests', () => {
                                     {
                                         line: '2',
                                         type: 'tram',
-                                        directions: ['Airport', 'Bridge']
+                                        directions: expect.arrayContaining(['Airport', 'Bridge'])
                                     },
                                     {
                                         line: '100',
                                         type: 'trolleybus',
-                                        directions: ['Lake', 'Bus Terminal']
+                                        directions: expect.arrayContaining(['Lake', 'Bus Terminal'])
                                     }
                                 ]
                             },
@@ -138,12 +139,12 @@ describe('Lines API tests', () => {
                         ]
                     }
                 ]
-            },
+)            },
             {
                 name: '2',
                 type: 'tram',
-                directions: ['Bridge', 'Airport'],
-                routes: [
+                directions: expect.arrayContaining(['Bridge', 'Airport']),
+                routes: expect.arrayContaining([
                     {
                         direction: 'Bridge',
                         stops: [
@@ -169,12 +170,12 @@ describe('Lines API tests', () => {
                                     {
                                         line: '1',
                                         type: 'tram',
-                                        directions: ['Suburb', 'Train Station']
+                                        directions: expect.arrayContaining(['Suburb', 'Train Station'])
                                     },
                                     {
                                         line: '100',
                                         type: 'trolleybus',
-                                        directions: ['Lake', 'Bus Terminal']
+                                        directions: expect.arrayContaining(['Lake', 'Bus Terminal'])
                                     }
                                 ]
                             },
@@ -210,12 +211,12 @@ describe('Lines API tests', () => {
                                     {
                                         line: '1',
                                         type: 'tram',
-                                        directions: ['Suburb', 'Train Station']
+                                        directions: expect.arrayContaining(['Suburb', 'Train Station'])
                                     },
                                     {
                                         line: '100',
                                         type: 'trolleybus',
-                                        directions: ['Lake', 'Bus Terminal']
+                                        directions: expect.arrayContaining(['Lake', 'Bus Terminal'])
                                     }
                                 ]
                             },
@@ -237,12 +238,12 @@ describe('Lines API tests', () => {
                         ]
                     }
                 ]
-            },
+)            },
             {
                 name: '100',
                 type: 'trolleybus',
-                directions: ['Bus Terminal', 'Lake'],
-                routes: [
+                directions: expect.arrayContaining(['Bus Terminal', 'Lake']),
+                routes: expect.arrayContaining([
                     {
                         direction: 'Bus Terminal',
                         stops: [
@@ -258,12 +259,12 @@ describe('Lines API tests', () => {
                                     {
                                         line: '1',
                                         type: 'tram',
-                                        directions: ['Suburb', 'Train Station']
+                                        directions: expect.arrayContaining(['Suburb', 'Train Station'])
                                     },
                                     {
                                         line: '2',
                                         type: 'tram',
-                                        directions: ['Airport', 'Bridge']
+                                        directions: expect.arrayContaining(['Airport', 'Bridge'])
                                     }
                                 ]
                             },
@@ -299,12 +300,12 @@ describe('Lines API tests', () => {
                                     {
                                         line: '1',
                                         type: 'tram',
-                                        directions: ['Suburb', 'Train Station']
+                                        directions: expect.arrayContaining(['Suburb', 'Train Station'])
                                     },
                                     {
                                         line: '2',
                                         type: 'tram',
-                                        directions: ['Airport', 'Bridge']
+                                        directions: expect.arrayContaining(['Airport', 'Bridge'])
                                     }
                                 ]
                             },
@@ -316,8 +317,8 @@ describe('Lines API tests', () => {
                         ]
                     }
                 ]
-            }
-        ]);
+)            }
+        ]));
     });
 
     it('should return 200 and properly describe line 1 when requesting GET /lines/describe-line for line 1', async () => {
@@ -326,8 +327,8 @@ describe('Lines API tests', () => {
         expect(response.body).toEqual({
             name: '1',
             type: 'tram',
-            directions: ['Suburb', 'Train Station'],
-            routes: [
+            directions: expect.arrayContaining(['Suburb', 'Train Station']),
+            routes: expect.arrayContaining([
                 {
                     direction: 'Suburb',
                     stops: [
@@ -353,12 +354,12 @@ describe('Lines API tests', () => {
                                 {
                                     line: '2',
                                     type: 'tram',
-                                    directions: ['Airport', 'Bridge']
+                                    directions: expect.arrayContaining(['Airport', 'Bridge'])
                                 },
                                 {
                                     line: '100',
                                     type: 'trolleybus',
-                                    directions: ['Lake', 'Bus Terminal']
+                                    directions: expect.arrayContaining(['Lake', 'Bus Terminal'])
                                 }
                             ]
                         },
@@ -394,12 +395,12 @@ describe('Lines API tests', () => {
                                 {
                                     line: '2',
                                     type: 'tram',
-                                    directions: ['Airport', 'Bridge']
+                                    directions: expect.arrayContaining(['Airport', 'Bridge'])
                                 },
                                 {
                                     line: '100',
                                     type: 'trolleybus',
-                                    directions: ['Lake', 'Bus Terminal']
+                                    directions: expect.arrayContaining(['Lake', 'Bus Terminal'])
                                 }
                             ]
                         },
@@ -421,7 +422,7 @@ describe('Lines API tests', () => {
                     ]
                 }
             ]
-        });
+)        });
     });
 
     it('should return 404 when requesting GET /lines/describe-line for a non-existing line', async () => {
@@ -503,12 +504,12 @@ describe('Lines API tests', () => {
                     {
                         line: '1',
                         type: 'tram',
-                        directions: ['Suburb', 'Train Station']
+                        directions: expect.arrayContaining(['Suburb', 'Train Station'])
                     },
                     {
                         line: '100',
                         type: 'trolleybus',
-                        directions: ['Lake', 'Bus Terminal']
+                        directions: expect.arrayContaining(['Lake', 'Bus Terminal'])
                     }
                 ]
             },

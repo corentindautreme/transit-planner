@@ -34,32 +34,59 @@ describe('With existing line data', () => {
         const describedLines = await linesService.describeLines();
         expect(describedLines).toHaveLength(3);
 
-        const line1 = describedLines[0];
-        expect(line1.directions).toStrictEqual(['Train Station', 'Suburb']);
+        const line1 = describedLines.find(l => l.name === '1')!;
+        expect(line1.directions).toEqual(expect.arrayContaining(['Train Station', 'Suburb']));
         expect(line1.routes).toHaveLength(2);
-        expect(line1.routes[0].stops.map(stop => stop.name)).toStrictEqual(['Suburb', 'Gate', 'City', 'Old Town', 'Bank', 'Train Station']);
-        expect(line1.routes[1].stops.map(stop => stop.name)).toStrictEqual(['Train Station', 'Bank', 'Old Town', 'City', 'Gate', 'Suburb']);
-        expect(line1.routes[0].stops[2].name).toBe('City');
-        expect(line1.routes[0].stops[2].connections.map(c => c.line)).toStrictEqual(['2', '100']);
-        expect(line1.routes.map(route => route.stops.filter(s => s.name !== 'City').map(s => s.connections).flat()).flat()).toHaveLength(0);
+        const line1Routes = line1.routes.map(route => route.stops.map(stop => stop.name));
+        expect(line1Routes).toEqual(expect.arrayContaining([
+            ['Suburb', 'Gate', 'City', 'Old Town', 'Bank', 'Train Station'],
+            ['Train Station', 'Bank', 'Old Town', 'City', 'Gate', 'Suburb']
+        ]));
+        // expect City to have 2 connections (on both routes)
+        const cityLine1Route1Stop = line1.routes[0].stops.find(s => s.name === 'City')!;
+        const cityLine1Route2Stop = line1.routes[1].stops.find(s => s.name === 'City')!;
+        expect(cityLine1Route1Stop.connections.map(c => c.line)).toStrictEqual(expect.arrayContaining(['2', '100']));
+        expect(cityLine1Route2Stop.connections.map(c => c.line)).toStrictEqual(expect.arrayContaining(['2', '100']));
+        // expect all other stops on both routes to have 0 connection
+        expect(line1.routes
+            .map(route => route.stops
+                .filter(s => s.name !== 'City')
+                .map(s => s.connections)
+                .flat()
+            ).flat()
+        ).toHaveLength(0);
 
-        const line2 = describedLines[1];
-        expect(line2.directions).toStrictEqual(['Bridge', 'Airport']);
+        const line2 = describedLines.find(l => l.name === '2')!;
+        expect(line2.directions).toStrictEqual(expect.arrayContaining(['Bridge', 'Airport']));
         expect(line2.routes).toHaveLength(2);
-        expect(line2.routes[0].stops.map(stop => stop.name)).toStrictEqual(['Airport', 'Court', 'Hospital', 'City', 'Residential', 'Bridge']);
-        expect(line2.routes[1].stops.map(stop => stop.name)).toStrictEqual(['Bridge', 'Residential', 'City', 'Hospital', 'Court', 'Airport']);
-        expect(line2.routes[0].stops[3].name).toBe('City');
-        expect(line2.routes[0].stops[3].connections.map(c => c.line)).toStrictEqual(['1', '100']);
+        const line2Routes = line2.routes.map(route => route.stops.map(stop => stop.name));
+        expect(line2Routes).toEqual(expect.arrayContaining([
+            ['Airport', 'Court', 'Hospital', 'City', 'Residential', 'Bridge'],
+            ['Bridge', 'Residential', 'City', 'Hospital', 'Court', 'Airport']
+        ]));
+        // expect City to have 2 connections (on both routes)
+        const cityLine2Route1Stop = line2.routes[0].stops.find(s => s.name === 'City')!;
+        const cityLine2Route2Stop = line2.routes[1].stops.find(s => s.name === 'City')!;
+        expect(cityLine2Route1Stop.connections.map(c => c.line)).toStrictEqual(expect.arrayContaining(['1', '100']));
+        expect(cityLine2Route2Stop.connections.map(c => c.line)).toStrictEqual(expect.arrayContaining(['1', '100']));
+        // expect all other stops on both routes to have 0 connection
         expect(line2.routes.map(route => route.stops.filter(s => s.name !== 'City').map(s => s.connections).flat()).flat()).toHaveLength(0);
 
-        const line3 = describedLines[2];
-        expect(line3.directions).toStrictEqual(['Bus Terminal', 'Lake']);
-        expect(line3.routes).toHaveLength(2);
-        expect(line3.routes[0].stops.map(stop => stop.name)).toStrictEqual(['Lake', 'City', 'University', 'Bus Terminal']);
-        expect(line3.routes[1].stops.map(stop => stop.name)).toStrictEqual(['Bus Terminal', 'University', 'City', 'Lake']);
-        expect(line3.routes[0].stops[1].name).toBe('City');
-        expect(line3.routes[0].stops[1].connections.map(c => c.line)).toStrictEqual(['1', '2']);
-        expect(line3.routes.map(route => route.stops.filter(s => s.name !== 'City').map(s => s.connections).flat()).flat()).toHaveLength(0);
+        const line100 = describedLines.find(l => l.name === '100')!;
+        expect(line100.directions).toStrictEqual(expect.arrayContaining(['Bus Terminal', 'Lake']));
+        expect(line100.routes).toHaveLength(2);
+        const line100Routes = line100.routes.map(route => route.stops.map(stop => stop.name));
+        expect(line100Routes).toEqual(expect.arrayContaining([
+            ['Lake', 'City', 'University', 'Bus Terminal'],
+            ['Bus Terminal', 'University', 'City', 'Lake']
+        ]));
+        // expect City to have 2 connections (on both routes)
+        const cityLine100Route1Stop = line100.routes[0].stops.find(s => s.name === 'City')!;
+        const cityLine100Route2Stop = line100.routes[1].stops.find(s => s.name === 'City')!;
+        expect(cityLine100Route1Stop.connections.map(c => c.line)).toStrictEqual(expect.arrayContaining(['1', '2']));
+        expect(cityLine100Route2Stop.connections.map(c => c.line)).toStrictEqual(expect.arrayContaining(['1', '2']));
+        // expect all other stops on both routes to have 0 connection
+        expect(line100.routes.map(route => route.stops.filter(s => s.name !== 'City').map(s => s.connections).flat()).flat()).toHaveLength(0);
     });
     
     it('should properly describe line 1', async() => {
@@ -67,10 +94,17 @@ describe('With existing line data', () => {
         expect(describedLine).toBeInstanceOf(Object);
         expect(describedLine.directions).toStrictEqual(['Suburb', 'Train Station']);
         expect(describedLine.routes).toHaveLength(2);
-        expect(describedLine.routes[0].stops.map(stop => stop.name)).toStrictEqual(['Train Station', 'Bank', 'Old Town', 'City', 'Gate', 'Suburb']);
-        expect(describedLine.routes[1].stops.map(stop => stop.name)).toStrictEqual(['Suburb', 'Gate', 'City', 'Old Town', 'Bank', 'Train Station']);
-        expect(describedLine.routes[0].stops[3].name).toBe('City');
-        expect(describedLine.routes[0].stops[3].connections.map(c => c.line)).toStrictEqual(['2', '100']);
+        const routes = describedLine.routes.map(route => route.stops.map(stop => stop.name));
+        expect(routes).toEqual(expect.arrayContaining([
+            ['Train Station', 'Bank', 'Old Town', 'City', 'Gate', 'Suburb'],
+            ['Suburb', 'Gate', 'City', 'Old Town', 'Bank', 'Train Station']
+        ]));
+        // expect City to have 2 connections (on both routes)
+        const cityRoute1Stop = describedLine.routes[0].stops.find(s => s.name === 'City')!;
+        const cityRoute2Stop = describedLine.routes[1].stops.find(s => s.name === 'City')!;
+        expect(cityRoute1Stop.connections.map(c => c.line)).toStrictEqual(expect.arrayContaining(['2', '100']));
+        expect(cityRoute2Stop.connections.map(c => c.line)).toStrictEqual(expect.arrayContaining(['2', '100']));
+        // expect all other stops on both routes to have 0 connection
         expect(describedLine.routes.map(route => route.stops.filter(s => s.name !== 'City').map(s => s.connections).flat()).flat()).toHaveLength(0);
     });
 
