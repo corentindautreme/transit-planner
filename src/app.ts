@@ -11,6 +11,7 @@ import * as SwaggerUI from 'swagger-ui-express';
 import stopsRoute from './routes/stops.route';
 import { authenticatedUser } from './lib/auth/auth.middleware';
 import path from 'node:path';
+import 'newrelic';
 
 const app = express();
 
