@@ -35,10 +35,11 @@ jobs:
           sed -i -e "s/__VAL__/$(echo $COVERAGE | jq .lines.pct)%/g" global.svg
           sed -i -e "s/__VAL__/$(echo $COVERAGE | jq .lines.pct)%/g" line.svg
           sed -i -e "s/__VAL__/$(echo $COVERAGE | jq .branches.pct)%/g" branch.svg
+          echo $COVERAGE > coverage.json
       - name: Commit and Push
         run: |
           git config --global user.email "corentindautreme@github.io"
           git config --global user.name "GitHub Actions"
-          git add *.svg
+          git add *.svg coverage.json
           git commit -m "Coverage badges"
           git push
