@@ -1,0 +1,60 @@
+name: PR Checks
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  pr-checks:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - name: Pnpm install
+        run: |
+          pnpm install
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NETWORK_TZ: ${{ vars.NETWORK_TZ }}
+          SCHEDULES_OFFSET: ${{ vars.SCHEDULES_OFFSET }}
+        run: |
+          pnpm test
+      - name: Extract coverage data
+        run: |
+          echo "COVERAGE=$(jq -c .total coverage/summary/coverage-summary.json)" >> $GITHUB_ENV
+          echo "COVERAGE_SUMMARY=$(npx nyc report --reporter text-summary -t coverage | grep -e Branches -e Lines -e = | sed ':a;N;$!ba;s/\n/\\n/g')" >> $GITHUB_ENV
+      - name: Checkout 'badges'
+        uses: actions/checkout@v4
+        with:
+          ref: badges
+      - name: Extract main coverage data
+        run: |
+          MAIN_COVERAGE=$(cat coverage/coverage.json)
+          MAIN_LINE=$(echo $MAIN_COVERAGE | jq .lines.pct)
+          LINE=$(echo $COVERAGE | jq .lines.pct)
+          echo "LINE_DIFF=$(echo "$LINE - $MAIN_LINE" | bc)" >> $GITHUB_ENV
+          MAIN_BRANCH=$(echo $MAIN_COVERAGE | jq .branches.pct)
+          BRANCH=$(echo $COVERAGE | jq .branches.pct)
+          echo "BRANCH_DIFF=$(echo "$BRANCH - $MAIN_BRANCH" | bc)" >> $GITHUB_ENV
+      - name: Add PR Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const lineDiff = (Number(process.env.LINE_DIFF) >= 0 ? "+" : "") + process.env.LINE_DIFF;
+            const branchDiff = (Number(process.env.BRANCH_DIFF) >= 0 ? "+" : "") + process.env.BRANCH_DIFF;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${process.env.COVERAGE_SUMMARY
+                .replace(/(Branches\s+: [0-9.% ()\/]+)/, `$1 **(${branchDiff}%)**`)
+                .replace(/(Lines\s+: [0-9.% ()\/]+)/, `$1 **(${lineDiff}%)**`)
+                .replaceAll("=", "\=")
+                .replaceAll("\\n", "<br>")
+              }`
+            })
+        env:
+          COVERAGE_SUMMARY: ${{ env.COVERAGE_SUMMARY }}
+          LINE_DIFF: ${{ env.LINE_DIFF }}
+          BRANCH_DIFF: ${{ env.BRANCH_DIFF }}
