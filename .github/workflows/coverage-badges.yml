@@ -41,5 +41,7 @@ jobs:
           git config --global user.email "corentindautreme@github.io"
           git config --global user.name "GitHub Actions"
           git add *.svg coverage.json
-          git commit -m "Coverage badges"
-          git push
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "Coverage badges"
+            git push
+          fi
