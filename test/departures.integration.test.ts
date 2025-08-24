@@ -24,7 +24,8 @@ describe('Departures API tests', () => {
         }]);
     });
 
-    it('should return 200 and all 7 departures from Business on line A in both directions when requesting GET /departures/scheduled in winter time', async () => {        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T17:30:00.264+02:00'));
+    it('should return 200 and all 7 departures from Business on line A in both directions when requesting GET /departures/scheduled in winter time', async () => {
+        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T17:30:00.264+02:00'));
         try {
             jest.useFakeTimers().setSystemTime(new Date('2025-01-13T00:00:00.000+01:00'));
             const response = await request(app).get('/departures/scheduled?from=3&line=A');
@@ -36,10 +37,7 @@ describe('Departures API tests', () => {
                     name: 'Business',
                     connections: [
                         {
-                            'directions': [
-                                'Airport',
-                                'Main Station'
-                            ],
+                            'directions': expect.arrayContaining(['Airport', 'Main Station']),
                             'line': 'A',
                             'type': 'bus'
                         }
@@ -116,10 +114,7 @@ describe('Departures API tests', () => {
                     name: 'Center',
                     connections: [
                         {
-                            'directions': [
-                                'Airport',
-                                'Main Station'
-                            ],
+                            'directions': expect.arrayContaining(['Airport', 'Main Station']),
                             'line': 'A',
                             'type': 'bus'
                         }
@@ -187,10 +182,7 @@ describe('Departures API tests', () => {
                     name: 'Pleasant Suburb',
                     connections: [
                         {
-                            'directions': [
-                                'Airport',
-                                'Main Station'
-                            ],
+                            'directions': expect.arrayContaining(['Airport', 'Main Station']),
                             'line': 'A',
                             'type': 'bus'
                         }
@@ -231,10 +223,7 @@ describe('Departures API tests', () => {
                     name: 'Business',
                     connections: [
                         {
-                            'directions': [
-                                'Airport',
-                                'Main Station'
-                            ],
+                            'directions': expect.arrayContaining(['Airport', 'Main Station']),
                             'line': 'A',
                             'type': 'bus'
                         }

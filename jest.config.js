@@ -6,7 +6,7 @@ module.exports = {
     collectCoverageFrom: ['**/*.ts'],
     coveragePathIgnorePatterns: [
         '<rootDir>/node_modules/',
-        '<rootDir>/generated/prisma/',
+        '<rootDir>/generated/',
         '<rootDir>/test/',
         '<rootDir>/src/server.ts',
         '<rootDir>/src/lib/db'

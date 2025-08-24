@@ -10,7 +10,7 @@
     "lint": "eslint src/**/*.ts",
     "test": "pnpm run testut && pnpm run testit && pnpm run coverage",
     "testut": "jest --testPathIgnorePatterns=.*\\.integration.test.ts --setupFilesAfterEnv ./test/config/prisma.mock.ts ./test/config/auth.mock.ts --coverageDirectory=./coverage/unit/ && cp ./coverage/unit/coverage-final.json ./coverage/coverage-final-unit.json",
-    "testit": "jest .*.integration.test.ts --setupFilesAfterEnv ./test/config/it-mocks.ts --coverageDirectory=./coverage/integration/ && cp ./coverage/integration/coverage-final.json ./coverage/coverage-final-integration.json",
+    "testit": "jest .*.integration.test.ts --runInBand --setupFilesAfterEnv ./test/config/it-mocks.ts --coverageDirectory=./coverage/integration/ && cp ./coverage/integration/coverage-final.json ./coverage/coverage-final-integration.json",
     "coverage": "nyc report --reporter json-summary --reporter text --reporter html -t coverage --report-dir coverage/summary"
   },
   "keywords": [],
@@ -27,6 +27,7 @@
     "helmet": "^8.1.0",
     "jest-mock-extended": "^4.0.0",
     "logger": "^0.0.1",
+    "sqlite3": "^5.1.7",
     "swagger-ui-dist": "^5.0.1",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0",

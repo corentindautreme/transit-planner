@@ -1,50 +1,56 @@
-import { PrismaClient } from '../../../../generated/prisma';
-import { execSync } from "child_process";
-import { join } from "path";
-import { URL } from "url";
-import { v4 } from "uuid";
+import { execSync } from 'child_process';
+import { join } from 'path';
+import * as fs from 'node:fs';
 
-const generateDatabaseURL = (schema: string) => {
-    if (!process.env.DATABASE_URL) {
-        throw new Error("please provide a database url");
-    }
-    const url = new URL(process.env.DATABASE_URL);
-    url.searchParams.append("schema", schema);
-    return url.toString();
-};
+const schema = join(__dirname, '..', '..', '..', '..', 'prisma', 'schema.prisma');
+const integrationSchema = join(__dirname, '..', '..', '..', '..', 'prisma', 'schema.integration.test.prisma');
 
-const schemaId = `test-${v4()}`;
-console.log(`Running ITs on PostgreSQL schema ${schemaId}`);
-const prismaBinary = join(
-    __dirname,
-    "..",
-    "..",
-    "..",
-    "..",
-    "node_modules",
-    ".bin",
-    "prisma",
-);
+const schemaContent = fs.readFileSync(schema, 'utf8');
+const schemaForIntegration = schemaContent
+    .replace(/generated\/prisma/g, 'generated/integration/prisma')
+    .replace(/postgresql/g, 'sqlite')
+    .replace(/(, )*map: "[A-Za-z0-9_]+"/g, '')              // named keys and constraints
+    .replace(/@db\.[A-Za-z0-9()]+/g, '')                    // @db types
+    .replace(/onDelete: NoAction/g, 'onDelete: Cascade');   // cascade delete on FKs to ease post-suite clean up
+fs.writeFileSync(integrationSchema, schemaForIntegration, 'utf8');
 
-const url = generateDatabaseURL(schemaId);
+const dbPath = join(__dirname, '..', '..', '..', '..', 'prisma', 'dev.db');
+
+const url = `file:${dbPath}`;
 process.env.DATABASE_URL = url;
 
+const prismaBinary = join(__dirname, '..', '..', '..', '..', 'node_modules', '.bin', 'prisma');
+
+execSync(`${prismaBinary} generate --schema ${integrationSchema}`);
+
+import { Prisma, PrismaClient } from '../../../../generated/integration/prisma';
+
 const prisma = new PrismaClient({
-    datasources: { db: { url } }
+    datasources: {db: {url}}
 });
 export default prisma;
 
-beforeEach(() => {
-    execSync(`${prismaBinary} db push`, {
+beforeAll(() => {
+    execSync(`${prismaBinary} db push --schema ${integrationSchema}`, {
         env: {
             ...process.env,
-            DATABASE_URL: generateDatabaseURL(schemaId),
-        },
+            DATABASE_URL: url,
+        }
     });
 });
-afterEach(async () => {
-    await prisma.$executeRawUnsafe(
-        `DROP SCHEMA IF EXISTS "${schemaId}" CASCADE;`,
-    );
+
+afterAll(async () => {
     await prisma.$disconnect();
+    execSync(`rm ${dbPath}`);
 });
+
+beforeEach(async () => {
+    const tables = await prisma.$queryRaw`SELECT name
+                                          FROM sqlite_master
+                                          WHERE type = 'table'
+                                            AND name NOT LIKE 'sqlite_%'` as { name: string }[];
+    for (const table of tables) {
+        await prisma.$executeRaw`DELETE
+                                 FROM ${Prisma.raw(table.name)}`;
+    }
+})
