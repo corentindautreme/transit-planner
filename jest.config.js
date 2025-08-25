@@ -9,6 +9,7 @@ module.exports = {
         '<rootDir>/generated/',
         '<rootDir>/test/',
         '<rootDir>/src/server.ts',
-        '<rootDir>/src/lib/db'
+        '<rootDir>/src/lib/db',
+        '<rootDir>/api'
     ],
 };
