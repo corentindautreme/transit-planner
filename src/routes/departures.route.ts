@@ -15,6 +15,7 @@ class DeparturesRoute {
     private initRoutes() {
         this.router.get('/scheduled', this.departuresController.getScheduledDepartures.bind(this.departuresController));
         this.router.get('/next', this.departuresController.getNextDepartures.bind(this.departuresController));
+        this.router.get('/stops', this.departuresController.getDeparturesOnRoute.bind(this.departuresController));
     }
 }
 

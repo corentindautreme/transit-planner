@@ -2,7 +2,7 @@ import { DescribedLine, Line, Route } from '../models/line';
 import DataAccessService from './data.access.service';
 import { Connection, Stop } from '../models/stop';
 import { LineNotFoundError } from '../models/error/line-not-found';
-import { StopNotFound } from '../models/error/stop-not-found';
+import { StopNotFoundError } from '../models/error/stop-not-found';
 
 export default class LinesService extends DataAccessService {
     constructor() {
@@ -91,11 +91,11 @@ export default class LinesService extends DataAccessService {
                 if (indexOfFrom > -1) {
                     return route.slice(indexOfFrom);
                 }
-                throw new StopNotFound(`A stop with internal ID ${from} does not exist on line ${name} in direction of ${direction}`);
+                throw new StopNotFoundError(`A stop with internal ID ${from} does not exist on line ${name} in direction of ${direction}`);
             }
             return route;
         }).catch((err: Error) => {
-            if (!(err instanceof LineNotFoundError || err instanceof StopNotFound)) {
+            if (!(err instanceof LineNotFoundError || err instanceof StopNotFoundError)) {
                 console.error(err);
             }
             throw err;
