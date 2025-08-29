@@ -51,6 +51,7 @@ jobs:
                 .replace(/(Branches\s+: [0-9.% ()\/]+)/, `$1 **(${branchDiff}%)**`)
                 .replace(/(Lines\s+: [0-9.% ()\/]+)/, `$1 **(${lineDiff}%)**`)
                 .replaceAll("=", "\=")
+                .slice(0, process.env.COVERAGE_SUMMARY.length - 5)
                 .replaceAll("\\n", "<br>")
               }`
             })

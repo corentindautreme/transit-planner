@@ -21,4 +21,13 @@ describe('Departures controller error handling tests', () => {
         expect(response.status).toBe(500);
         expect(response.body).toEqual({error: 'An internal error occurred and your request could not be processed'});
     });
+
+    it('should return 500 and a generic error message when an unexpected Error is throw when requesting GET /departures/stops', async () => {
+        prismaMock.line_stop.findMany.mockImplementation(() => {
+            return Promise.reject(new Error('Oh no!')) as PrismaPromise<any>;
+        });
+        const response = await request(app).get('/departures/stops?line=1&direction=Somewhere&from=0');
+        expect(response.status).toBe(500);
+        expect(response.body).toEqual({error: 'An internal error occurred and your request could not be processed'});
+    });
 });

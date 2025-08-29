@@ -168,8 +168,6 @@ export default class DeparturesService extends DataAccessService {
                         // network does not match the timezone in which the schedules were entered (e.g. DST)
                         const times = applyOffset((Object.keys(lineDepartures).includes(r.direction) ? lineDepartures[r.direction] : [])
                             // reset the date to 1970-01-01 (so that 00:XX departures that are saved as 1969-12-31 don't get lost)
-                            // TODO I think this below needs to be tested for a departure at 23:59:00 + 2 min delay
-                            //  maybe add the delay before resetting the date?
                             .map(d => new Date(d.setUTCFullYear(1970, 0, 1) + delay * 60_000)));
 
                         let departures = times
@@ -284,7 +282,7 @@ export default class DeparturesService extends DataAccessService {
                 .map(d => new Date(d.setUTCFullYear(1970, 0, 1)));
 
             const today = new Date(after || now);
-            const todayISODateString = (after ? today.toISOString() : today.toLocaleDateString('sv-SE', {timeZone: process.env.NETWORK_TZ})).slice(0, 10);
+            const todayISODateString = today.toISOString().slice(0, 10);
             const tomorrowISODateString = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
             const times = departuresFromOrigin
