@@ -25,7 +25,6 @@ describe('Departures API tests', () => {
     });
 
     it('should return 200 and all 7 departures from Business on line A in both directions when requesting GET /departures/scheduled in winter time', async () => {
-        jest.useFakeTimers().setSystemTime(new Date('2025-06-13T17:30:00.264+02:00'));
         try {
             jest.useFakeTimers().setSystemTime(new Date('2025-01-13T00:00:00.000+01:00'));
             const response = await request(app).get('/departures/scheduled?from=3&line=A');
@@ -281,5 +280,146 @@ describe('Departures API tests', () => {
         const response = await request(app).get('/departures/next?from=1&line=2&direction=Bus%20Station');
         expect(response.status).toBe(404);
         expect(response.body).toEqual({error: 'Unable to find departures from stop with internal ID 1 on line 2 in direction of Bus Station'});
+    });
+
+    it('should return 200 and a route with stops at 09:18, 09:21, and 09:28 when requesting GET /departures/stops for a departure from Business towards Airport at 09:18 summer time', async () => {
+        try {
+            jest.useFakeTimers().setSystemTime(new Date('2025-06-26T09:18:00.000+02:00'));
+            const response = await request(app).get('/departures/stops?line=A&direction=Airport&from=3');
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual([
+                {
+                    id: 3,
+                    name: 'Business',
+                    departures: [{scheduledAt: '2025-06-26T07:18:00.000Z'}]
+                },
+                {
+                    id: 4,
+                    name: 'Pleasant Suburb',
+                    departures: [{scheduledAt: '2025-06-26T07:21:00.000Z'}]
+                },
+                {
+                    id: 5,
+                    name: 'Airport',
+                    departures: [{scheduledAt: '2025-06-26T07:28:00.000Z'}]
+                }
+            ]);
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    it('should return 200 and a route with stops at 15:30, 15:37, 15:40, 15:42, and 15:43; 17:30, 17:37, 17:40, 17:42, and 17:43; and 05:30, 05:37, 05:40, 05:42, and 05:43 when requesting GET /departures/stops for the next 3 departures (including past stops) from Pleasant Suburb towards Main Station at 15:30 winter time', async () => {
+        try {
+            jest.useFakeTimers().setSystemTime(new Date('2025-02-26T15:30:02.144+01:00'));
+            const response = await request(app).get('/departures/stops?line=A&direction=Main%20Station&from=4&includePast=true&limit=3');
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual([
+                {
+                    id: 5,
+                    name: 'Airport',
+                    departures: [
+                        {scheduledAt: '2025-02-26T14:30:00.000Z'},
+                        {scheduledAt: '2025-02-26T16:30:00.000Z'},
+                        {scheduledAt: '2025-02-27T04:30:00.000Z'}
+                    ]
+                },
+                {
+                    id: 4,
+                    name: 'Pleasant Suburb',
+                    departures: [
+                        {scheduledAt: '2025-02-26T14:37:00.000Z'},
+                        {scheduledAt: '2025-02-26T16:37:00.000Z'},
+                        {scheduledAt: '2025-02-27T04:37:00.000Z'}
+                    ]
+                },
+                {
+                    id: 3,
+                    name: 'Business',
+                    departures: [
+                        {scheduledAt: '2025-02-26T14:40:00.000Z'},
+                        {scheduledAt: '2025-02-26T16:40:00.000Z'},
+                        {scheduledAt: '2025-02-27T04:40:00.000Z'}
+                    ]
+                },
+                {
+                    id: 2,
+                    name: 'Center',
+                    departures: [
+                        {scheduledAt: '2025-02-26T14:42:00.000Z'},
+                        {scheduledAt: '2025-02-26T16:42:00.000Z'},
+                        {scheduledAt: '2025-02-27T04:42:00.000Z'}
+                    ]
+                },
+                {
+                    id: 1,
+                    name: 'Main Station',
+                    departures: [
+                        {scheduledAt: '2025-02-26T14:43:00.000Z'},
+                        {scheduledAt: '2025-02-26T16:43:00.000Z'},
+                        {scheduledAt: '2025-02-27T04:43:00.000Z'}
+                    ]
+                }
+            ]);
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    it('should return 200 and a route with stops at 05:16, 05:18, and 05:21 when requesting GET /departures/stops for a route between Center and Pleasant Suburb towards Airport at 01:24 summer time', async () => {
+        try {
+            jest.useFakeTimers().setSystemTime(new Date('2025-09-18T01:24:28.083+02:00'));
+            const response = await request(app).get('/departures/stops?line=A&direction=Airport&from=2&to=4');
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual([
+                {
+                    id: 2,
+                    name: 'Center',
+                    departures: [{scheduledAt: '2025-09-18T03:16:00.000Z'}]
+                },
+                {
+                    id: 3,
+                    name: 'Business',
+                    departures: [{scheduledAt: '2025-09-18T03:18:00.000Z'}]
+                },
+                {
+                    id: 4,
+                    name: 'Pleasant Suburb',
+                    departures: [{scheduledAt: '2025-09-18T03:21:00.000Z'}]
+                }
+            ]);
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    it('should return 404 when requesting GET /departures/stops for a non-existent line and direction', async () => {
+        const response = await request(app).get('/departures/stops?line=999&direction=Nowhere');
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual({error: 'Unable to find a route with direction Nowhere on line 999'});
+    });
+
+    it('should return 404 when requesting GET /departures/stops for a non-existent direction on an existing line', async () => {
+        const response = await request(app).get('/departures/stops?line=A&direction=Nowhere');
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual({error: 'Unable to find a route with direction Nowhere on line A'});
+    });
+
+    it('should return 404 when requesting GET /departures/stops between 2 non-existent stops', async () => {
+        const response = await request(app).get('/departures/stops?line=A&direction=Airport&from=99&to=100');
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual({error: 'Stops 99 and 100 not served by line A towards Airport'});
+    });
+
+    it('should return 404 when requesting GET /departures/stops between Center and a non-existent stop', async () => {
+        const response = await request(app).get('/departures/stops?line=A&direction=Airport&from=2&to=100');
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual({error: 'Stop 100 not served by line A towards Airport'});
+    });
+
+    it('should return 404 when requesting GET /departures/stops between a non-existent stop and Business', async () => {
+        const response = await request(app).get('/departures/stops?line=A&direction=Main%20Station&from=999&to=3');
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual({error: 'Stop 999 not served by line A towards Main Station'});
     });
 });

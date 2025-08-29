@@ -1,4 +1,4 @@
-export class StopNotFound extends Error {
+export class StopNotFoundError extends Error {
     constructor(message: string) {
         super(message);
     }

@@ -2,7 +2,7 @@ import LinesService from '../services/lines.service';
 import { Request, Response } from 'express';
 import { Stop } from '../models/stop';
 import { LineNotFoundError } from '../models/error/line-not-found';
-import { StopNotFound } from '../models/error/stop-not-found';
+import { StopNotFoundError } from '../models/error/stop-not-found';
 
 export default class LinesController {
     private readonly linesService: LinesService;
@@ -30,7 +30,7 @@ export default class LinesController {
                 if (err instanceof LineNotFoundError) {
                     status = 404;
                     errorMessage = err.message;
-                } else if (err instanceof StopNotFound) {
+                } else if (err instanceof StopNotFoundError) {
                     status = 400;
                     errorMessage = err.message;
                 } else {

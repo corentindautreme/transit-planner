@@ -1,9 +1,10 @@
 import DataAccessService from './data.access.service';
 import { Departure, DepartureByLine, DeparturesAtStop } from '../models/departures';
 import { TransportType } from '../models/transport-type';
-import { Connection } from '../models/stop';
+import { Connection, Stop, StopAndRouteDeparture } from '../models/stop';
 import { DepartureNotFoundError } from '../models/error/departure-not-found';
 import { applyOffset } from '../util/time-utils';
+import { StopNotFoundError } from '../models/error/stop-not-found';
 
 export default class DeparturesService extends DataAccessService {
     constructor() {
@@ -218,5 +219,99 @@ export default class DeparturesService extends DataAccessService {
     async getNextDepartures(from: number, line?: string, direction?: string, limit?: number): Promise<DeparturesAtStop> {
         const after = new Date();
         return this.getScheduledDepartures(from, line, direction, after, limit || 5);
+    }
+
+    async getDeparturesOnRoute(line: string, direction: string, from?: number, to?: number, includePast?: boolean, after?: string, limit?: number): Promise<StopAndRouteDeparture[]> {
+        return this.prismaClient.line_stop.findMany({
+            select: {
+                stop: {
+                    select: {
+                        id: true,
+                        name: true,
+                        departure: {
+                            select: {time_utc: true},
+                            where: {line: {name: line}, direction: direction},
+                            orderBy: {time_utc: 'asc'}
+                        },
+                        departure_delay: {
+                            select: {delay: true},
+                            where: {line: {name: line}, direction: direction}
+                        }
+                    }
+                },
+            },
+            where: {
+                line: {name: line},
+                direction: direction
+            },
+            orderBy: {order: 'asc'}
+        }).then(lineStops => lineStops as {
+            stop: Stop & {
+                departure: { time_utc: Date }[],
+                departure_delay: { delay: number }[]
+            }
+        }[]).then(lineStops => {
+            if (lineStops.length == 0) {
+                throw new StopNotFoundError(`Unable to find a route with direction ${direction} on line ${line}`);
+            }
+            if (!!from || !!to) {
+                const stops = lineStops.map(ls => ls.stop.id!);
+                const hasFrom = !!from && stops.includes(from);
+                const hasTo = !!to && stops.includes(to);
+                if ((from && !hasFrom) || (to && !hasTo)) {
+                    throw new StopNotFoundError(`Stop${!hasFrom && !hasTo ? 's' : ''} ${!hasFrom ? from : ''}${!hasFrom && !hasTo ? ' and ' : ''}${!hasTo ? to : ''} not served by line ${line} towards ${direction}`);
+                }
+            }
+            return lineStops;
+        }).then(lineStops => {
+            const now = new Date();
+
+            let getAfter: Date | undefined;
+            let afterDate = new Date(after || now);
+            afterDate.setSeconds(0, 0);
+            if (from) {
+                const delay = lineStops.find(ls => ls.stop.id == from)!.stop.departure_delay[0].delay;
+                afterDate = new Date(afterDate.getTime() - delay * 60_000);
+            }
+            getAfter = new Date(`1970-01-01 ${afterDate.toISOString().slice(11)}`);
+            // apply an offset to the returned departure times when the current timezone of the transit's
+            // network does not match the timezone in which the schedules were entered (e.g. DST)
+            const departuresFromOrigin = applyOffset(lineStops[0].stop.departure.map(d => d.time_utc))
+                .sort()
+                // reset the date to 1970-01-01 (so that 00:XX departures that are saved as 1969-12-31 don't get lost)
+                .map(d => new Date(d.setUTCFullYear(1970, 0, 1)));
+
+            const today = new Date(after || now);
+            const todayISODateString = today.toISOString().slice(0, 10);
+            const tomorrowISODateString = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+            const times = departuresFromOrigin
+                .filter(d => !getAfter || d >= getAfter)
+                .slice(0, limit || 1);
+            const additionalTimes = times.length == (limit || 1)
+                ? []
+                : departuresFromOrigin.slice(0, (limit || 1) - times.length);
+
+            return lineStops
+                .slice(
+                    !includePast && from ? lineStops.findIndex(ls => ls.stop.id == from) : 0,
+                    to ? lineStops.findIndex(ls => ls.stop.id == to) + 1 : undefined
+                )
+                .map(ls => ({
+                    id: ls.stop.id,
+                    name: ls.stop.name,
+                    departures: [
+                        times
+                            .map(d => new Date(d.getTime() + (ls.stop.departure_delay[0]?.delay || 0) * 60_000))
+                            .map(d => ({scheduledAt: todayISODateString + d.toISOString().slice(10)}) as Departure),
+                        additionalTimes
+                            .map(d => new Date(d.getTime() + (ls.stop.departure_delay[0]?.delay || 0) * 60_000))
+                            .map(d => ({scheduledAt: tomorrowISODateString + d.toISOString().slice(10)} as Departure))
+                    ].flat()
+                } as StopAndRouteDeparture))
+        }).catch((err: Error) => {
+            console.error(err);
+            throw err;
+        });
     }
 }
