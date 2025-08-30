@@ -6,7 +6,7 @@
     "dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --exec \"ts-node src/server.ts\"",
     "build": "tsc",
     "start": "node dist/server.js",
-    "postinstall": "mkdir public/api-docs && cp node_modules/swagger-ui-dist/swagger-ui.css public/api-docs/swagger-ui.css && cp node_modules/swagger-ui-dist/swagger-ui-bundle.js public/api-docs/swagger-ui-bundle.js && cp node_modules/swagger-ui-dist/swagger-ui-standalone-preset.js public/api-docs/swagger-ui-standalone-preset.js && prisma generate",
+    "postinstall": "prisma generate",
     "lint": "eslint src/**/*.ts",
     "test": "pnpm run testut && pnpm run testit && pnpm run coverage",
     "testut": "jest --testPathIgnorePatterns=.*\\.integration.test.ts --setupFilesAfterEnv ./test/config/prisma.mock.ts ./test/config/auth.mock.ts --coverageDirectory=./coverage/unit/ && cp ./coverage/unit/coverage-final.json ./coverage/coverage-final-unit.json",
